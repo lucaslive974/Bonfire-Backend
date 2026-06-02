@@ -1,20 +1,12 @@
 from warnings import deprecated
 from typing import List, Tuple, Any, Dict
 import pandas as pd
-from sqlalchemy import insert
 
 from handlers.log import logger
 from repositories.database import get_db
 from repositories.autoinfracao_repository import AutoInfracaoRepository
 from exceptions.CustomExceptions import ErrReadingFile
 from services.parsers import parse_csv_infracoes, parse_xls_infracoes
-
-
-def insert_ignore_mysql(table, conn, keys, data_iter):
-    data = [dict(zip(keys, row)) for row in data_iter]
-    stmt = insert(table.table).values(data).prefix_with("IGNORE")
-    result = conn.execute(stmt)
-    return result.rowcount
 
 
 def get_infracoes(date: Any, ai: Any) -> List[Dict[str, Any]]:
@@ -44,7 +36,7 @@ def insert_infracoes_csv(csv: Any) -> int:
     data_frame = parse_csv_infracoes(csv)
     with get_db() as db:
         repo = AutoInfracaoRepository(db)
-        count = repo.insert_bulk_df(data_frame, insert_ignore_mysql)
+        count = repo.insert_bulk_df(data_frame)
         logger.info(f"INFO: {count} autos processados. FILE: {csv}")
         return count
 
@@ -65,6 +57,6 @@ def insert_cmn_infracoes_xls(xls: Any) -> int:
     data_frame = parse_xls_infracoes(xls)
     with get_db() as db:
         repo = AutoInfracaoRepository(db)
-        count = repo.insert_bulk_df(data_frame, insert_ignore_mysql)
+        count = repo.insert_bulk_df(data_frame)
         logger.info(f"INFO: {count} autos processados - {xls}")
         return count

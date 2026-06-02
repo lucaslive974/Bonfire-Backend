@@ -3,6 +3,12 @@ from sqlalchemy.orm import Session
 from sqlalchemy import insert
 from classes.AutoInfracao import AutoInfracao
 
+def insert_ignore_mysql(table, conn, keys, data_iter):
+    data = [dict(zip(keys, row)) for row in data_iter]
+    stmt = insert(table.table).values(data).prefix_with("IGNORE")
+    result = conn.execute(stmt)
+    return result.rowcount
+
 class AutoInfracaoRepository:
     def __init__(self, db: Session):
         self.db = db
@@ -26,7 +32,9 @@ class AutoInfracaoRepository:
         
         return rows_counter, counter, rows_not_present
 
-    def insert_bulk_df(self, data_frame: Any, insert_ignore_func: Any) -> int:
+    def insert_bulk_df(self, data_frame: Any, insert_ignore_func: Any = None) -> int:
+        if insert_ignore_func is None:
+            insert_ignore_func = insert_ignore_mysql
         conn = self.db.connection()
         count = data_frame.to_sql('auto_infracao', conn, if_exists='append', index=False, method=insert_ignore_func)
         return count
