@@ -1,4 +1,3 @@
-import json
 from flask import Blueprint, jsonify, request
 from tempfile import NamedTemporaryFile
 from exceptions.CustomExceptions import *

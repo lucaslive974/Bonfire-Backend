@@ -1,4 +1,3 @@
-import json
 from flask import Blueprint, jsonify, request
 from exceptions.CustomExceptions import CustomException, ErrIncompleteData
 from handlers import infracoes
@@ -23,9 +22,12 @@ def post_xls():
         if 'file' not in request.files:
             raise ErrIncompleteData("Arquivo XLS de infrações não está presente na requisição", 400)
         file = request.files['file']
-        response = infracoes.insert_infracoes_xls(file, request.args.get("insert_ignore", True))
+        insert_ignore_val = request.args.get("insert_ignore", "true")
+        insert_ignore = str(insert_ignore_val).lower() == "true"
+        response = infracoes.insert_infracoes_xls(file, insert_ignore)
         return jsonify({"message": f"{response} autos inseridos com sucesso"}), 200
     except CustomException as e:
+
         return jsonify(e.to_json()), e.status
 
 
