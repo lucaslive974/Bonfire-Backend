@@ -1,75 +1,63 @@
-from typing import List
-from classes.Veiculo import Veiculo
-from repositories.database import MySQL
+import json
+from typing import List, Dict, Any
+from repositories.database import get_db
+from repositories.veiculo_repository import VeiculoRepository
 from exceptions.CustomExceptions import ErrGetData, ErrInsertData, ErrUpdateData
-
-import pandas as pd
 from handlers.log import logger
-from sqlalchemy import text
 
-engine = MySQL().get_connection()
-
-def getVeiculos() -> List[Veiculo]:
-    """Recupera os veiculos do banco de dados"""
-    query = f"SELECT * FROM veiculos"
+def getVeiculos() -> str:
+    """Recupera os veiculos do banco de dados e retorna em formato JSON string."""
     try:
-        with engine.connect() as connection:
-            data_frame = pd.read_sql(query, connection)
-            json_data = data_frame.to_json(orient='records')
-        engine.dispose()
-        return json_data or []
+        with get_db() as db:
+            repo = VeiculoRepository(db)
+            veiculos = repo.get_all()
+            # Convert list of models to list of dicts, then serialize to json
+            data = [v.to_dict() for v in veiculos]
+            return json.dumps(data)
     except Exception as e:
         logger.systemLog(e)
         raise ErrGetData("Erro ao recuperar os veiculos", 500)
-    
 
-def insertVeiculos(veiculos: List[Veiculo]):
+
+def insertVeiculos(veiculos_data: List[Dict[str, Any]]) -> int:
     """Insere uma lista de veículos no banco de dados"""
-    query = '''INSERT INTO veiculos (NUM_VEIC, IDN_PLAC_VEIC, VEIC_ATIV_EMPR) VALUES (:NUM_VEIC, :IDN_PLAC_VEIC, :VEIC_ATIV_EMPR)'''
-    counter = 0    
-    try: 
-        with engine.connect() as conn:
-            for veiculo in veiculos:
-                result = conn.execute(text(query), veiculo)
-                if result.rowcount > 0:
-                    counter = counter +1
-            conn.commit()
-        engine.dispose()
-        return counter
+    try:
+        with get_db() as db:
+            repo = VeiculoRepository(db)
+            count = repo.insert_bulk(veiculos_data)
+            return count
     except Exception as e:
         logger.systemLog(e)
         raise ErrInsertData("Erro ao inserir veiculos", 500)
-        
 
-def updateVeiculos(veiculos: List[Veiculo]):
+
+def updateVeiculos(veiculos_data: List[Dict[str, Any]]) -> int:
     """Atualiza uma lista de veículos no banco de dados"""
-    query = '''UPDATE veiculos set VEIC_ATIV_EMPR = :VEIC_ATIV_EMPR, IDN_PLAC_VEIC = :IDN_PLAC_VEIC WHERE NUM_VEIC = :NUM_VEIC'''
-    counter = 0    
-    try: 
-        with engine.connect() as conn:
-            for item in veiculos:
-                result = conn.execute(text(query), item)
-                if result.rowcount > 0:
-                    counter = counter +1
-            conn.commit()
-        engine.dispose()
-        return counter
+    try:
+        with get_db() as db:
+            repo = VeiculoRepository(db)
+            count = repo.update_bulk(veiculos_data)
+            return count
     except Exception as e:
         logger.systemLog(e)
         raise ErrUpdateData("Erro ao atualizar os veiculos", 500)
-    
-def deleteVeiculos(veiculo):
-    """Deleta uma lista de veiculos no banco de dados"""
-    veiculo_object = {"NUM_VEIC": veiculo}
-    query = '''DELETE FROM veiculos WHERE NUM_VEIC = :NUM_VEIC'''
-    counter = 0    
-    try: 
-        with engine.connect() as conn:
-            result = conn.execute(text(query), veiculo_object)
-            counter = result.rowcount
-            conn.commit()
-        engine.dispose()
-        return counter
+
+
+def deleteVeiculos(num_veic: str) -> int:
+    """Deleta um veiculo no banco de dados pelo seu número"""
+    try:
+        # Convert num_veic to integer if possible, as it is INT in veiculos table
+        try:
+            num_veic_int = int(num_veic)
+        except ValueError:
+            raise ErrUpdateData("Número do veículo inválido", 400)
+
+        with get_db() as db:
+            repo = VeiculoRepository(db)
+            count = repo.delete(num_veic_int)
+            return count
     except Exception as e:
         logger.systemLog(e)
+        if isinstance(e, ErrUpdateData):
+            raise e
         raise ErrUpdateData("Erro ao deletar os veiculos", 500)

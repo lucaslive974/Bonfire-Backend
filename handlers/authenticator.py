@@ -1,6 +1,6 @@
 from abc import abstractmethod, ABC
 from datetime import datetime, timezone
-from typing import override
+from typing import override, Any
 
 from handlers.log import logger
 
@@ -14,7 +14,7 @@ class Authenticator(ABC):
         pass
 
     @abstractmethod
-    def checkConnection(self):
+    def checkConnection(self) -> None:
         pass
 
 
@@ -24,7 +24,7 @@ from keycloak import KeycloakOpenID, KeycloakRPTNotFound
 class KeyCloakAuthenticator(Authenticator):
     def __init__(self):
         logger.info("::Configuring Keycloak session::")
-        self.keycloakOpenId = KeycloakOpenID(f"{config.envs["KEYCLOAK_ISSUER"]}/auth",
+        self.keycloakOpenId = KeycloakOpenID(f"{config.envs['KEYCLOAK_ISSUER']}/auth",
                                 config.envs["KEYCLOAK_REALM_NAME"],
                                 config.envs["KEYCLOAK_CLIENT_ID"],
                                 config.envs["KEYCLOAK_CLIENT_SECRET"])
@@ -42,15 +42,19 @@ class KeyCloakAuthenticator(Authenticator):
             if method != "Bearer":
                 return False
 
-            token_info: dict[str, str] = self.keycloakOpenId.decode_token(token)
+            token_info: dict[str, Any] = self.keycloakOpenId.decode_token(token)
             now = self.getTimestamp()
 
-            return bool(now < token_info.get('exp', 0))
+            # Safely get the exp, ensuring it defaults to 0 if not present
+            exp_val = token_info.get('exp', 0)
+            exp = float(exp_val) if isinstance(exp_val, (int, float, str)) else 0.0
+
+            return bool(now < exp)
         except:
             return False
 
     @override
-    def checkConnection(self):
+    def checkConnection(self) -> None:
         try:
             logger.info("::Checking Keycloak connection::")
             #Try to get well-know form the server
@@ -58,7 +62,4 @@ class KeyCloakAuthenticator(Authenticator):
         except KeycloakRPTNotFound as e:
             logger.error("::Keycloak connection failed::")
             logger.error(str(e.error_message))
-
             raise
-        finally:
-            return
