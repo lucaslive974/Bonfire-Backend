@@ -51,31 +51,35 @@ def get_session_local():
     return _SessionLocal
 
 
-def print_connection_data():
+def print_database_connection() -> None:
+    """Imprime no log as informações básicas de conexão com o banco de dados (excluindo a senha)."""
     db_config = config.envs
-    logger.info(f"""
+    logger.info(
+        f"""
 |===============================================
-|Database Information                        
-|Driver: {db_config.get("DB_DRIVER")}         
-|Host: {db_config.get("DB_HOST")}             
-|Port: {db_config.get("DB_PORT")}             
-|Database: {db_config.get("DB_NAME")}     
-|User: {db_config.get("DB_USER")}
-|Password: **************
+| Database Connection Details
+| Driver:   {db_config.get('DB_DRIVER', 'mysql')}
+| Host:     {db_config.get('DB_HOST', 'localhost')}
+| Port:     {db_config.get('DB_PORT', '3306')}
+| Database: {db_config.get('DB_NAME', 'bonfire')}
+| User:     {db_config.get('DB_USER', 'bonfire')}
+| Password: **************
 |===============================================
-    """)
+"""
+    )
 
 
-def check_database_connection():
+def check_database_connection() -> None:
+    """Verifica a conectividade ativa com o banco de dados e exibe os metadados de conexão."""
     logger.info("::Testing database connection::")
     try:
         engine = get_engine()
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
-            print_connection_data()
-            logger.info("::Database connection succesfull::")
+            print_database_connection()
+            logger.info("::Database connection successful::")
     except Exception as e:
-        logger.systemLog(e)
+        logger.systemLog(f"Database connection check failed: {e}")
         raise ErrCreatingDbConnection("Erro ao conectar no banco de dados", 500)
 
 
