@@ -14,3 +14,4 @@ openpyxl
 # Database
 sqlalchemy
 pymysql
+alembic
