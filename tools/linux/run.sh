@@ -1,9 +1,5 @@
 #!/usr/bin/env bash
 
-source .venv/bin/activate
-
-set -a
-source .env
-set +a
+source ./tools/linux/set_env.sh
 
 python -u main.py "$@"

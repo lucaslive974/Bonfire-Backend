@@ -2,4 +2,4 @@
 
 source ./tools/linux/set_env.sh
 
-.venv/bin/python -m pytest
+alembic upgrade head
