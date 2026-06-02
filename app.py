@@ -1,11 +1,12 @@
 from flask_cors import CORS
-from flask import Flask, Response, request
+from flask import Flask, Response, request, jsonify
 
 from routes import autoinfracao, recursos, veiculos, linha, consorcio
 from handlers.log import logger, http_logger
 
 from handlers.authenticator import Authenticator, KeyCloakAuthenticator
 from repositories.database import check_database_connection
+from exceptions.CustomExceptions import CustomException
 
 
 class BonfireApp(Flask):
@@ -28,6 +29,21 @@ class BonfireApp(Flask):
         self._authController = KeyCloakAuthenticator()
         self._authController.checkConnection()
 
+        # Custom domain exception handler
+        @self.errorhandler(CustomException)
+        def _handle_custom_exception(e: CustomException):  # pyright: ignore [reportUnusedFunction]
+            return jsonify(e.to_json()), e.status
+
+        # Generic unexpected exception handler
+        @self.errorhandler(Exception)
+        def _handle_generic_exception(e: Exception):  # pyright: ignore [reportUnusedFunction]
+            logger.systemLog(e)
+            status_code = getattr(e, "code", 500)
+            return jsonify({
+                "error": "Internal Server Error",
+                "message": "Ocorreu um erro interno no servidor."
+            }), status_code
+
         @self.before_request
         def _():
             return self.checkAuth()
@@ -41,22 +57,20 @@ class BonfireApp(Flask):
         http_logger.request(request, response.status_code)
         return response    
 
-    def checkAuth(self):
-        isOptions = request.method == "OPTIONS"
-        if isOptions:
-            return
+    def checkAuth(self) -> Response | None:
+        if request.method == "OPTIONS":
+            return None
 
-        unauthorized = Response("Unauthorized", status=401)
-        auth_header = str(request.authorization).split(' ')
-        if len(auth_header) != 2:
-            return unauthorized
+        auth_header = request.headers.get("Authorization")
+        if not auth_header:
+            return Response("Unauthorized", status=401)
 
-        isBearer = auth_header[1]
-        if not isBearer:
-            return unauthorized
+        parts = auth_header.split(" ")
+        if len(parts) != 2 or parts[0] != "Bearer":
+            return Response("Unauthorized", status=401)
 
-        logged = self._authController.isAuthenticated(str(request.authorization))
-        if not logged:
-            return unauthorized
+        token = parts[1]
+        if not self._authController.isAuthenticated(token):
+            return Response("Unauthorized", status=401)
 
-        return
+        return None

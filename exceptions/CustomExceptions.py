@@ -1,12 +1,15 @@
+from typing import Dict, Any
+
 class CustomException(Exception):
     """Classe básica para as exceções customizadas da aplicação"""
     def __init__(self,  message: str, status: int = 500, error:  str = '') -> None:
+        super().__init__(message)
         self.error = error
         self.message = message
         self.status = status
         self.counter = None
     
-    def to_json(self) -> dict:
+    def to_json(self) -> Dict[str, Any]:
         return {
             "error": self.error,
             "message": self.message,
@@ -14,47 +17,47 @@ class CustomException(Exception):
         }
 
 class ErrDataPubli(CustomException):
-    def __init__(self, message, status, error="DAT_PUBL Invalida"):
+    def __init__(self, message: str, status: int, error: str = "DAT_PUBL Invalida"):
         super().__init__(message, status, error)
 
 class ErrNullInsert(CustomException):
-    def __init__(self, message, status, error="autoSegundaInstanciaList NULL"):
+    def __init__(self, message: str, status: int, error: str = "autoSegundaInstanciaList NULL"):
         super().__init__(message, status, error)
     
 class ErrInvalidDbConfig(CustomException):
-    def __init__(self, message, status, error="Invalid DB config"):
+    def __init__(self, message: str, status: int, error: str = "Invalid DB config"):
         super().__init__(message, status, error)
     
 class ErrCreatingDbConnection(CustomException):
-    def __init__(self, message, status, error="Error creating DB Connection"):
+    def __init__(self, message: str, status: int, error: str = "Error creating DB Connection"):
         super().__init__(message, status, error)
 
 class ErrGetData(CustomException):
-    def __init__(self, message, status, error="Error fetching data"):
+    def __init__(self, message: str, status: int, error: str = "Error fetching data"):
         super().__init__(message, status, error)
     
 class ErrInsertData(CustomException):
-    def __init__(self, message, status, error="Error inserting data"):
+    def __init__(self, message: str, status: int, error: str = "Error inserting data"):
         super().__init__(message, status, error)
         
 class ErrUpdateData(CustomException):
-    def __init__(self, message, status, error="Error updating data"):
+    def __init__(self, message: str, status: int, error: str = "Error updating data"):
         super().__init__(message, status, error)
 
 class ErrIncompleteData(CustomException):
-    def __init__(self,  message, status, error="Incomplete Data"):
+    def __init__(self,  message: str, status: int, error: str = "Incomplete Data"):
         super().__init__(message, status, error)
     
 class ErrLogger(CustomException):
-    def __init__(self, message, status, error="Error on logs"):
+    def __init__(self, message: str, status: int, error: str = "Error on logs"):
         super().__init__(message, status, error)       
         
 class ErrInvalidJson(CustomException):
-    def __init__(self, expectedObject, message, status, error="Invalid JSON Object"):
+    def __init__(self, expectedObject: Any, message: str, status: int, error: str = "Invalid JSON Object"):
         super().__init__(message, status, error)
         self.expectedObject = expectedObject
 
-    def to_json(self) -> dict:
+    def to_json(self) -> Dict[str, Any]:
         return {
             "error": self.error,
             "message": self.message,
@@ -62,17 +65,17 @@ class ErrInvalidJson(CustomException):
         }
 
 class ErrReadingFile(CustomException):
-    def __init__(self, message: str, status: int = 500, error="Error in file"):
+    def __init__(self, message: str, status: int = 500, error: str = "Error in file"):
         super().__init__(message, status, error)
 
 
 class ErrQuantityOfAtas(CustomException):
-    def __init__(self, message: str, qtdAtas, qtdTables, status: int = 400, error: str ="Error extracting atas or tables"):
+    def __init__(self, message: str, qtdAtas: Any, qtdTables: Any, status: int = 400, error: str = "Error extracting atas or tables"):
         super().__init__(message, status, error)
         self.qtdAtas = qtdAtas
         self.qtdTables = qtdTables
 
-    def to_json(self) -> dict:
+    def to_json(self) -> Dict[str, Any]:
         return {
             "error": self.error,
             "message": self.message,
@@ -87,5 +90,3 @@ class ErrIncorrectInstance(CustomException):
 class ErrMissingRequiredEnv(CustomException):
     def __init__(self, message: str):
         super().__init__(message, 500)
-
-        

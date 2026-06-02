@@ -1,18 +1,11 @@
-import pandas as pd
-from repositories.database import MySQL
-from handlers.log import logger
-from exceptions.CustomExceptions import ErrGetData
+import json
+from repositories.database import get_db
+from repositories.consorcio_repository import ConsorcioRepository
 
-def get_consorcios():
+def get_consorcios() -> str:
     """Retorna todos os consórcios cadastrados."""
-    engine = MySQL().get_connection()
-    query = f'SELECT * FROM operadora'
-    try:
-        with engine.connect():
-            dataframe = pd.read_sql(query, engine)
-            json_data = dataframe.to_json(orient='records')
-        engine.dispose()
-        return json_data
-    except Exception as e:
-        logger.systemLog(e)
-        raise ErrGetData('Erro ao recuperar os consórcios', 500)
+    with get_db() as db:
+        repo = ConsorcioRepository(db)
+        consorcios = repo.get_all()
+        data = [c.to_dict() for c in consorcios]
+        return json.dumps(data)

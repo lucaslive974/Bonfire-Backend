@@ -1,2 +1,0 @@
-pip install openpyxl
-Para converter XLS para Excel
