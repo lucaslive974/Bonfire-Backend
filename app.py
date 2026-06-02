@@ -1,11 +1,12 @@
 from flask_cors import CORS
-from flask import Flask, Response, request
+from flask import Flask, Response, request, jsonify
 
 from routes import autoinfracao, recursos, veiculos, linha, consorcio
 from handlers.log import logger, http_logger
 
 from handlers.authenticator import Authenticator, KeyCloakAuthenticator
 from repositories.database import check_database_connection
+from exceptions.CustomExceptions import CustomException
 
 
 class BonfireApp(Flask):
@@ -27,6 +28,21 @@ class BonfireApp(Flask):
         check_database_connection()
         self._authController = KeyCloakAuthenticator()
         self._authController.checkConnection()
+
+        # Custom domain exception handler
+        @self.errorhandler(CustomException)
+        def _handle_custom_exception(e: CustomException):  # pyright: ignore [reportUnusedFunction]
+            return jsonify(e.to_json()), e.status
+
+        # Generic unexpected exception handler
+        @self.errorhandler(Exception)
+        def _handle_generic_exception(e: Exception):  # pyright: ignore [reportUnusedFunction]
+            logger.systemLog(e)
+            status_code = getattr(e, "code", 500)
+            return jsonify({
+                "error": "Internal Server Error",
+                "message": "Ocorreu um erro interno no servidor."
+            }), status_code
 
         @self.before_request
         def _():
