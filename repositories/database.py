@@ -58,11 +58,11 @@ def print_database_connection() -> None:
         f"""
 |===============================================
 | Database Connection Details
-| Driver:   {db_config.get('DB_DRIVER', 'mysql')}
-| Host:     {db_config.get('DB_HOST', 'localhost')}
-| Port:     {db_config.get('DB_PORT', '3306')}
-| Database: {db_config.get('DB_NAME', 'bonfire')}
-| User:     {db_config.get('DB_USER', 'bonfire')}
+| Driver:   {db_config.get("DB_DRIVER", "mysql")}
+| Host:     {db_config.get("DB_HOST", "localhost")}
+| Port:     {db_config.get("DB_PORT", "3306")}
+| Database: {db_config.get("DB_NAME", "bonfire")}
+| User:     {db_config.get("DB_USER", "bonfire")}
 | Password: **************
 |===============================================
 """
