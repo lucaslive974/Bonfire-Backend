@@ -14,7 +14,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 from classes.Config import config as app_config
 from classes.Base import Base
 # Import all model classes so they are registered on Base.metadata
-from classes import AutoInfracao, Linha, Operadora, Veiculo, Recurso
+from classes import AutoInfracao, Linha, Operadora, Veiculo
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
