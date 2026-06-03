@@ -2,4 +2,4 @@
 
 source ./tools/linux/set_env.sh
 
-alembic upgrade "$@"
+alembic downgrade "$@"

@@ -103,20 +103,6 @@ def upgrade() -> None:
         sa.UniqueConstraint('NUM_AI')
     )
 
-    # Seed initial data for operadora
-    operadora_table = sa.table(
-        'operadora',
-        sa.column('ID', sa.Integer),
-        sa.column('NOME', sa.String),
-        sa.column('CONCESSIONARIA', sa.String)
-    )
-    op.bulk_insert(operadora_table, [
-        {'ID': 107, 'NOME': 'MILENIO TRANSPORTES', 'CONCESSIONARIA': 'CONSORCIO PAMPULHA'},
-        {'ID': 123, 'NOME': 'BOA VISTA COLETIVOS', 'CONCESSIONARIA': 'CONSORCIO BHLESTE'},
-        {'ID': 113, 'NOME': 'VIA BH COLETIVOS', 'CONCESSIONARIA': 'CONSORCIO DEZ'},
-        {'ID': 37, 'NOME': 'VIACAO ANCHIETA', 'CONCESSIONARIA': 'CONSORCIO DOM PEDRO II'}
-    ])
-
 
 def downgrade() -> None:
     """Downgrade schema."""
