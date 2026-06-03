@@ -1,5 +1,6 @@
 import os
 import sys
+import urllib.parse
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config
@@ -22,13 +23,11 @@ config = context.config
 
 # Dynamically construct database connection URL from project config
 user = app_config.DB_USER
-password = app_config.DB_PASSWORD
+password = urllib.parse.quote_plus(app_config.DB_PASSWORD) if app_config.DB_PASSWORD else ""
 host = app_config.DB_HOST
 port = app_config.DB_PORT
 database = app_config.DB_NAME
 db_url = f"mysql+pymysql://{user}:{password}@{host}:{port}/{database}"
-
-config.set_main_option("sqlalchemy.url", db_url)
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
@@ -52,9 +51,8 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = config.get_main_option("sqlalchemy.url")
     context.configure(
-        url=url,
+        url=db_url,
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
@@ -71,9 +69,9 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
-    connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
-        prefix="sqlalchemy.",
+    from sqlalchemy import create_engine
+    connectable = create_engine(
+        db_url,
         poolclass=pool.NullPool,
     )
 

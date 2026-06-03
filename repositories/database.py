@@ -26,7 +26,9 @@ def get_engine():
                 401,
             )
 
-        db_url = f"mysql+pymysql://{user}:{password}@{host}:{port}/{database}"
+        import urllib.parse
+        escaped_password = urllib.parse.quote_plus(password) if password else ""
+        db_url = f"mysql+pymysql://{user}:{escaped_password}@{host}:{port}/{database}"
 
         try:
             # Use SQLAlchemy connection pool, pre-ping to check connection viability
