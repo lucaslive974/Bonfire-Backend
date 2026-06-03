@@ -5,10 +5,10 @@ from sys import argv, exit
 
 usage_msg = '''usage: user password'''
 
-keycloakOpenId = KeycloakOpenID(f"{config.envs["KEYCLOAK_ISSUER"]}/auth",
-                                config.envs["KEYCLOAK_REALM_NAME"],
-                                config.envs["KEYCLOAK_CLIENT_ID"],
-                                config.envs["KEYCLOAK_CLIENT_SECRET"])
+keycloakOpenId = KeycloakOpenID(f"{config.KEYCLOAK_ISSUER}/auth",
+                                config.KEYCLOAK_REALM_NAME or "",
+                                config.KEYCLOAK_CLIENT_ID,
+                                config.KEYCLOAK_CLIENT_SECRET)
 
 #Validate usage
 if(len(argv) != 3):

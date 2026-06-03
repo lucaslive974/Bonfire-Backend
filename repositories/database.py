@@ -13,13 +13,12 @@ def get_engine():
     """Lazily initializes and returns the SQLAlchemy engine."""
     global _engine
     if _engine is None:
-        db_config = config.envs
-        driver = db_config.get("DB_DRIVER")
-        host = db_config.get("DB_HOST")
-        port = db_config.get("DB_PORT")
-        database = db_config.get("DB_NAME")
-        user = db_config.get("DB_USER")
-        password = db_config.get("DB_PASSWORD")
+        driver = config.DB_DRIVER
+        host = config.DB_HOST
+        port = config.DB_PORT
+        database = config.DB_NAME
+        user = config.DB_USER
+        password = config.DB_PASSWORD
 
         if None in (driver, host, database, user, password):
             raise ErrInvalidDbConfig(
@@ -53,16 +52,15 @@ def get_session_local():
 
 def print_database_connection() -> None:
     """Imprime no log as informações básicas de conexão com o banco de dados (excluindo a senha)."""
-    db_config = config.envs
     logger.info(
         f"""
 |===============================================
 | Database Connection Details
-| Driver:   {db_config.get("DB_DRIVER", "mysql")}
-| Host:     {db_config.get("DB_HOST", "localhost")}
-| Port:     {db_config.get("DB_PORT", "3306")}
-| Database: {db_config.get("DB_NAME", "bonfire")}
-| User:     {db_config.get("DB_USER", "bonfire")}
+| Driver:   {config.DB_DRIVER}
+| Host:     {config.DB_HOST}
+| Port:     {config.DB_PORT}
+| Database: {config.DB_NAME}
+| User:     {config.DB_USER}
 | Password: **************
 |===============================================
 """

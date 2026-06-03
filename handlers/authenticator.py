@@ -25,10 +25,10 @@ class KeyCloakAuthenticator(Authenticator):
     def __init__(self):
         logger.info("::Configuring Keycloak session::")
         self.keycloakOpenId = KeycloakOpenID(
-            f"{config.envs['KEYCLOAK_ISSUER']}/auth",
-            config.envs["KEYCLOAK_REALM_NAME"],
-            config.envs["KEYCLOAK_CLIENT_ID"],
-            config.envs["KEYCLOAK_CLIENT_SECRET"],
+            f"{config.KEYCLOAK_ISSUER}/auth",
+            config.KEYCLOAK_REALM_NAME or "",
+            config.KEYCLOAK_CLIENT_ID,
+            config.KEYCLOAK_CLIENT_SECRET,
         )
         logger.info("::Keycloak connection established::")
 

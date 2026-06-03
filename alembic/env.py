@@ -8,7 +8,7 @@ from sqlalchemy import pool
 from alembic import context
 
 # Insert the project root to sys.path to allow importing project packages
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 # Load the project config and base metadata
 from classes.Config import config as app_config
@@ -21,12 +21,11 @@ from classes import AutoInfracao, Linha, Operadora, Veiculo
 config = context.config
 
 # Dynamically construct database connection URL from project config
-db_config = app_config.envs
-user = db_config.get('DB_USER')
-password = db_config.get('DB_PASSWORD')
-host = db_config.get('DB_HOST')
-port = db_config.get('DB_PORT')
-database = db_config.get('DB_NAME')
+user = app_config.DB_USER
+password = app_config.DB_PASSWORD
+host = app_config.DB_HOST
+port = app_config.DB_PORT
+database = app_config.DB_NAME
 db_url = f"mysql+pymysql://{user}:{password}@{host}:{port}/{database}"
 
 config.set_main_option("sqlalchemy.url", db_url)
@@ -39,6 +38,7 @@ if config.config_file_name is not None:
 # add your model's MetaData object here
 # for 'autogenerate' support
 target_metadata = Base.metadata
+
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.
@@ -78,9 +78,7 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=target_metadata
-        )
+        context.configure(connection=connection, target_metadata=target_metadata)
 
         with context.begin_transaction():
             context.run_migrations()
