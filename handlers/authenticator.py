@@ -36,10 +36,6 @@ class KeyCloakAuthenticator(Authenticator):
     def getTimestamp(self) -> float:
         return datetime.now(timezone.utc).timestamp()
 
-    @override
-    def getTimestamp(self) -> float:
-        return datetime.now(timezone.utc).timestamp()
-
 
     @override
     def isAuthenticated(self, token: str) -> bool:
