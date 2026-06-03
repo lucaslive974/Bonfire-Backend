@@ -1,3 +1,13 @@
+import os
+
+# Set dummy environment variables to prevent Config from raising ErrMissingRequiredEnv during test imports
+for key, val in [
+    ("DB_PASSWORD", "test_password"),
+    ("KEYCLOAK_CLIENT_SECRET", "test_client_secret"),
+    ("KEYCLOAK_REALM_NAME", "test_realm"),
+]:
+    os.environ.setdefault(key, val)
+
 import pytest
 from unittest.mock import patch
 
