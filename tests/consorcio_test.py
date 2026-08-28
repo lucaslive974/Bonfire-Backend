@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 @pytest.mark.usefixtures("app", "client", "database")
 class TestConsorcio:
-    @patch("handlers.consorcios.get_consorcios")
+    @patch("routes.consorcio.ConsorcioService.get_consorcios")
     def test_get_route(self, mock_get, client, database):
         """Testa se a rota GET /consorcio retorna a lista correta de consórcios"""
         mock_get.return_value = '[{"ID": 107, "NOME": "MILENIO TRANSPORTES", "CONCESSIONARIA": "CONSORCIO PAMPULHA"}]'
@@ -16,7 +16,7 @@ class TestConsorcio:
         assert len(data["consorcios"]) == 1
         assert data["consorcios"][0]["ID"] == 107
 
-    @patch("handlers.consorcios.insert_consorcios")
+    @patch("routes.consorcio.ConsorcioService.insert_consorcios")
     def test_insert_route(self, mock_insert, client, database):
         """Testa se a rota POST /consorcio insere consórcios com sucesso"""
         mock_insert.return_value = 1
@@ -35,7 +35,7 @@ class TestConsorcio:
         assert data["message"] == "Consórcios inseridos com sucesso"
         assert data["counter"] == 1
 
-    @patch("handlers.consorcios.update_consorcios")
+    @patch("routes.consorcio.ConsorcioService.update_consorcios")
     def test_patch_route(self, mock_update, client, database):
         """Testa se a rota PATCH /consorcio atualiza consórcios com sucesso"""
         mock_update.return_value = 1
@@ -54,7 +54,7 @@ class TestConsorcio:
         assert data["message"] == "Consórcios atualizados com sucesso"
         assert data["counter"] == 1
 
-    @patch("handlers.consorcios.update_consorcios")
+    @patch("routes.consorcio.ConsorcioService.update_consorcios")
     def test_put_route(self, mock_update, client, database):
         """Testa se a rota PUT /consorcio atualiza consórcios com sucesso"""
         mock_update.return_value = 1
@@ -73,7 +73,7 @@ class TestConsorcio:
         assert data["message"] == "Consórcios atualizados com sucesso"
         assert data["counter"] == 1
 
-    @patch("handlers.consorcios.delete_consorcio")
+    @patch("routes.consorcio.ConsorcioService.delete_consorcio")
     def test_delete_route(self, mock_delete, client, database):
         """Testa se a rota DELETE /consorcio/<id> deleta consórcios com sucesso"""
         mock_delete.return_value = 1

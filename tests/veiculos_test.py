@@ -6,7 +6,7 @@ from unittest.mock import patch, MagicMock
 from classes.Veiculo import Veiculo
 from repositories.veiculo_repository import VeiculoRepository
 from exceptions.CustomExceptions import ErrUpdateData
-from handlers import veiculos as handlers_veiculos
+from services.veiculo_service import VeiculoService
 
 
 def test_veiculo_model_without_dat_baix():
@@ -71,7 +71,8 @@ def test_veiculo_repository_update_bulk_deactivate():
         VEIC_ATIV_EMPR=True,
         DAT_BAIX=None,
     )
-    mock_db.query.return_value.filter.return_value.first.return_value = existing_veiculo
+    mock_model = repo._to_model(existing_veiculo)
+    mock_db.query.return_value.filter.return_value.first.return_value = mock_model
 
     payload = [
         {"NUM_VEIC": 1111, "VEIC_ATIV_EMPR": False}
@@ -79,9 +80,9 @@ def test_veiculo_repository_update_bulk_deactivate():
 
     count = repo.update_bulk(payload)
     assert count == 1
-    assert existing_veiculo.VEIC_ATIV_EMPR is False
-    assert existing_veiculo.DAT_BAIX is not None
-    assert isinstance(existing_veiculo.DAT_BAIX, datetime)
+    assert mock_model.VEIC_ATIV_EMPR is False
+    assert mock_model.DAT_BAIX is not None
+    assert isinstance(mock_model.DAT_BAIX, datetime)
 
 
 def test_veiculo_repository_update_bulk_already_deactivated_raises_error():
@@ -94,7 +95,8 @@ def test_veiculo_repository_update_bulk_already_deactivated_raises_error():
         VEIC_ATIV_EMPR=False,
         DAT_BAIX=datetime(2026, 1, 1),
     )
-    mock_db.query.return_value.filter.return_value.first.return_value = existing_veiculo
+    mock_model = repo._to_model(existing_veiculo)
+    mock_db.query.return_value.filter.return_value.first.return_value = mock_model
 
     payload = [
         {"NUM_VEIC": 1111, "VEIC_ATIV_EMPR": False}
@@ -116,7 +118,8 @@ def test_veiculo_repository_update_bulk_reactivate():
         VEIC_ATIV_EMPR=False,
         DAT_BAIX=datetime(2026, 1, 1),
     )
-    mock_db.query.return_value.filter.return_value.first.return_value = existing_veiculo
+    mock_model = repo._to_model(existing_veiculo)
+    mock_db.query.return_value.filter.return_value.first.return_value = mock_model
 
     payload = [
         {"NUM_VEIC": 1111, "VEIC_ATIV_EMPR": True}
@@ -124,13 +127,13 @@ def test_veiculo_repository_update_bulk_reactivate():
 
     count = repo.update_bulk(payload)
     assert count == 1
-    assert existing_veiculo.VEIC_ATIV_EMPR is True
-    assert existing_veiculo.DAT_BAIX is None
+    assert mock_model.VEIC_ATIV_EMPR is True
+    assert mock_model.DAT_BAIX is None
 
 
-@patch("handlers.veiculos.get_db")
-@patch("handlers.veiculos.VeiculoRepository")
-def test_handler_get_veiculos(mock_repo_cls, mock_get_db):
+@patch("services.veiculo_service.get_db")
+@patch("services.veiculo_service.VeiculoRepository")
+def test_service_get_veiculos(mock_repo_cls, mock_get_db):
     mock_db = MagicMock()
     mock_get_db.return_value.__enter__.return_value = mock_db
     mock_repo = MagicMock()
@@ -144,7 +147,7 @@ def test_handler_get_veiculos(mock_repo_cls, mock_get_db):
     )
     mock_repo.get_all.return_value = [mock_veic]
 
-    res = handlers_veiculos.getVeiculos()
+    res = VeiculoService.get_veiculos()
     data = json.loads(res)
     assert len(data) == 1
     assert data[0]["NUM_VEIC"] == 1111
@@ -153,7 +156,7 @@ def test_handler_get_veiculos(mock_repo_cls, mock_get_db):
 
 @pytest.mark.usefixtures("app", "client", "database")
 class TestVeiculos:
-    @patch("handlers.veiculos.getVeiculos")
+    @patch("routes.veiculos.VeiculoService.get_veiculos")
     def test_get_route(self, mock_get, client, database):
         """Testa se a rota GET /veiculos retorna 200 e a lista correta"""
         mock_get.return_value = (
@@ -169,7 +172,7 @@ class TestVeiculos:
         assert data["veiculos"][0]["NUM_VEIC"] == 1111
         assert data["veiculos"][0]["DAT_BAIX"] is None
 
-    @patch("handlers.veiculos.getVeiculos")
+    @patch("routes.veiculos.VeiculoService.get_veiculos")
     def test_get_route_with_data_baixa(self, mock_get, client, database):
         """Testa se a rota GET /veiculos retorna 200 com DAT_BAIX preenchido"""
         mock_get.return_value = (
@@ -185,7 +188,7 @@ class TestVeiculos:
         assert data["veiculos"][0]["NUM_VEIC"] == 2222
         assert data["veiculos"][0]["DAT_BAIX"] == "2026-08-28T10:30:00"
 
-    @patch("handlers.veiculos.insertVeiculos")
+    @patch("routes.veiculos.VeiculoService.insert_veiculos")
     def test_insert_route(self, mock_insert, client, database):
         """Testa a rota POST /veiculos"""
         mock_insert.return_value = 1
@@ -201,7 +204,7 @@ class TestVeiculos:
         assert data["message"] == "Veículos inseridos com sucesso"
         assert data["counter"] == 1
 
-    @patch("handlers.veiculos.updateVeiculos")
+    @patch("routes.veiculos.VeiculoService.update_veiculos")
     def test_update_route(self, mock_update, client, database):
         """Testa a rota PATCH /veiculos"""
         mock_update.return_value = 1
@@ -217,7 +220,7 @@ class TestVeiculos:
         assert data["message"] == "Veículos atualizados com sucesso"
         assert data["counter"] == 1
 
-    @patch("handlers.veiculos.deleteVeiculos")
+    @patch("routes.veiculos.VeiculoService.delete_veiculos")
     def test_delete_route(self, mock_delete, client, database):
         """Testa a rota DELETE /veiculos/<NUM_VEIC>"""
         mock_delete.return_value = 1
@@ -228,4 +231,3 @@ class TestVeiculos:
         data = json.loads(response.data)
         assert data["message"] == "Veículos deletados com sucesso"
         assert data["counter"] == 1
-

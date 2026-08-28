@@ -3,7 +3,7 @@ from sqlalchemy.orm import sessionmaker, scoped_session
 from contextlib import contextmanager
 from exceptions.CustomExceptions import ErrInvalidDbConfig, ErrCreatingDbConnection
 from classes.Config import config
-from handlers.log import logger
+from utils.logger import logger
 
 _engine = None
 _SessionLocal = None

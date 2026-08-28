@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 @pytest.mark.usefixtures("app", "client", "database")
 class TestInfracoes:
-    @patch("handlers.infracoes.insert_infracoes_csv")
+    @patch("routes.autoinfracao.AutoInfracaoService.insert_infracoes_csv")
     def test_post_csv_route(self, mock_insert, client, database):
         """Testa se a rota POST /infracao/csv importa com sucesso"""
         mock_insert.return_value = 5
@@ -27,7 +27,7 @@ class TestInfracoes:
         res_data = json.loads(response.data)
         assert res_data["message"] == "5 autos de infração importados"
 
-    @patch("handlers.infracoes.insert_infracoes_xls")
+    @patch("routes.autoinfracao.AutoInfracaoService.insert_infracoes_xls")
     def test_post_xls_route(self, mock_insert, client, database):
         """Testa se a rota POST /infracao/xls insere com sucesso"""
         mock_insert.return_value = 10
@@ -41,7 +41,7 @@ class TestInfracoes:
         res_data = json.loads(response.data)
         assert res_data["message"] == "10 autos inseridos com sucesso"
 
-    @patch("handlers.infracoes.get_infracoes")
+    @patch("routes.autoinfracao.AutoInfracaoService.get_infracoes")
     def test_get_infracoes_route(self, mock_get, client, database):
         """Testa se a rota GET /infracao busca corretamente"""
         mock_get.return_value = [{"NUM_AI": "1234-A", "VAL_INFR": 150.0}]
@@ -53,7 +53,7 @@ class TestInfracoes:
         assert len(res_data["autos"]) == 1
         assert res_data["autos"][0]["NUM_AI"] == "1234-A"
 
-    @patch("handlers.infracoes.check_infracoes")
+    @patch("routes.autoinfracao.AutoInfracaoService.check_infracoes")
     def test_check_infracoes_route(self, mock_check, client, database):
         """Testa se a rota POST /infracao/check valida os registros"""
         mock_check.return_value = (8, 10, ["9999-X", "8888-Y"])

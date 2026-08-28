@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, request
 from tempfile import NamedTemporaryFile
 from exceptions.CustomExceptions import ErrIncompleteData
-from handlers import recursos
+from services.recurso_service import RecursoService
 
 RecursoPrimeiraInstanciaBlueprint = Blueprint('recursoPrimeiraInstancia', __name__)
 
@@ -14,15 +14,15 @@ def postResultadoPrimeiraInstancia():
     temp_file = NamedTemporaryFile(delete=False)
     file.save(temp_file.name)
 
-    recurso_primeira_instancia_list = recursos.parseDocx(temp_file)
-    response = recursos.insertPrimeiraInstancia(recurso_primeira_instancia_list)
+    recurso_primeira_instancia_list = RecursoService.parse_docx(temp_file)
+    response = RecursoService.insert_primeira_instancia(recurso_primeira_instancia_list)
     return jsonify({"message": "itens Extraídos e armazenados com sucesso!", "counter": response}), 200
 
 @RecursoPrimeiraInstanciaBlueprint.route("/recurso/primeiraInstancia", methods=["GET"])
 def getRecursoPrimeiraInstancia():
     date = request.args.get('date')
     ata = request.args.get('ata')
-    result = recursos.getPrimeiraInstancia(date, ata)
+    result = RecursoService.get_primeira_instancia(date, ata)
     return jsonify({"recurses": result }), 200    
 
 
@@ -37,12 +37,12 @@ def postResultadoSegundaInstancia():
     temp_file = NamedTemporaryFile(delete=False)
     file.save(temp_file.name)
 
-    response = recursos.insertSegundaInstancia(recursos.parseDocx(temp_file, False))
+    response = RecursoService.insert_segunda_instancia(RecursoService.parse_docx(temp_file, False))
     return jsonify({"message": "itens Extraídos e armazenados com sucesso!", "counter": response}), 200
 
 
 @RecursoPrimeiraInstanciaBlueprint.route("/recurso/segundaInstancia", methods=["GET"])
 def getRecursoSegundaInstancia():
     date = request.args.get('date')
-    result = recursos.getSegundaInstancia(date)
+    result = RecursoService.get_segunda_instancia(date)
     return jsonify({"recurses": result }), 200

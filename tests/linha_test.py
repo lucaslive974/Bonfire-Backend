@@ -6,7 +6,7 @@ from unittest.mock import patch, MagicMock
 from classes.Linha import Linha
 from repositories.linha_repository import LinhaRepository
 from exceptions.CustomExceptions import ErrUpdateData
-from handlers import linha as handlers_linha
+from services.linha_service import LinhaService
 
 
 def test_linha_model_without_dat_baix():
@@ -82,7 +82,8 @@ def test_linha_repository_update_bulk_deactivate():
         LINH_ATIV_EMPR=True,
         DAT_BAIX=None,
     )
-    mock_db.query.return_value.filter.return_value.first.return_value = existing_linha
+    mock_model = repo._to_model(existing_linha)
+    mock_db.query.return_value.filter.return_value.first.return_value = mock_model
 
     payload = [
         {"COD_LINH": "61", "LINH_ATIV_EMPR": False}
@@ -90,9 +91,9 @@ def test_linha_repository_update_bulk_deactivate():
 
     count = repo.update_bulk(payload)
     assert count == 1
-    assert existing_linha.LINH_ATIV_EMPR is False
-    assert existing_linha.DAT_BAIX is not None
-    assert isinstance(existing_linha.DAT_BAIX, datetime)
+    assert mock_model.LINH_ATIV_EMPR is False
+    assert mock_model.DAT_BAIX is not None
+    assert isinstance(mock_model.DAT_BAIX, datetime)
 
 
 def test_linha_repository_update_bulk_already_deactivated_raises_error():
@@ -106,7 +107,8 @@ def test_linha_repository_update_bulk_already_deactivated_raises_error():
         LINH_ATIV_EMPR=False,
         DAT_BAIX=datetime(2026, 1, 1),
     )
-    mock_db.query.return_value.filter.return_value.first.return_value = existing_linha
+    mock_model = repo._to_model(existing_linha)
+    mock_db.query.return_value.filter.return_value.first.return_value = mock_model
 
     payload = [
         {"COD_LINH": "61", "LINH_ATIV_EMPR": False}
@@ -129,7 +131,8 @@ def test_linha_repository_update_bulk_reactivate():
         LINH_ATIV_EMPR=False,
         DAT_BAIX=datetime(2026, 1, 1),
     )
-    mock_db.query.return_value.filter.return_value.first.return_value = existing_linha
+    mock_model = repo._to_model(existing_linha)
+    mock_db.query.return_value.filter.return_value.first.return_value = mock_model
 
     payload = [
         {"COD_LINH": "61", "LINH_ATIV_EMPR": True}
@@ -137,13 +140,13 @@ def test_linha_repository_update_bulk_reactivate():
 
     count = repo.update_bulk(payload)
     assert count == 1
-    assert existing_linha.LINH_ATIV_EMPR is True
-    assert existing_linha.DAT_BAIX is None
+    assert mock_model.LINH_ATIV_EMPR is True
+    assert mock_model.DAT_BAIX is None
 
 
-@patch("handlers.linha.get_db")
-@patch("handlers.linha.LinhaRepository")
-def test_handler_get_linha(mock_repo_cls, mock_get_db):
+@patch("services.linha_service.get_db")
+@patch("services.linha_service.LinhaRepository")
+def test_service_get_linha(mock_repo_cls, mock_get_db):
     mock_db = MagicMock()
     mock_get_db.return_value.__enter__.return_value = mock_db
     mock_repo = MagicMock()
@@ -158,7 +161,7 @@ def test_handler_get_linha(mock_repo_cls, mock_get_db):
     )
     mock_repo.get_all.return_value = [mock_linha]
 
-    res = handlers_linha.getLinha()
+    res = LinhaService.get_linha()
     data = json.loads(res)
     assert len(data) == 1
     assert data[0]["COD_LINH"] == "61"
@@ -167,7 +170,7 @@ def test_handler_get_linha(mock_repo_cls, mock_get_db):
 
 @pytest.mark.usefixtures("app", "client", "database")
 class TestLinha:
-    @patch("handlers.linha.getLinha")
+    @patch("routes.linha.LinhaService.get_linha")
     def test_get_route(self, mock_get, client, database):
         """Testa se a rota GET /linha retorna a lista correta de linhas"""
         mock_get.return_value = '[{"COD_LINH": "61", "ID_OPERADORA": 107, "COMPARTILHADA": true, "LINH_ATIV_EMPR": true, "DAT_BAIX": null}]'
@@ -180,7 +183,7 @@ class TestLinha:
         assert data["linha"][0]["COD_LINH"] == "61"
         assert data["linha"][0]["DAT_BAIX"] is None
 
-    @patch("handlers.linha.getLinha")
+    @patch("routes.linha.LinhaService.get_linha")
     def test_get_route_with_data_baixa(self, mock_get, client, database):
         """Testa se a rota GET /linha retorna a lista com DAT_BAIX preenchido"""
         mock_get.return_value = '[{"COD_LINH": "62", "ID_OPERADORA": 108, "COMPARTILHADA": false, "LINH_ATIV_EMPR": false, "DAT_BAIX": "2026-08-28T11:00:00"}]'
@@ -193,7 +196,7 @@ class TestLinha:
         assert data["linha"][0]["COD_LINH"] == "62"
         assert data["linha"][0]["DAT_BAIX"] == "2026-08-28T11:00:00"
 
-    @patch("handlers.linha.insertLinha")
+    @patch("routes.linha.LinhaService.insert_linha")
     def test_insert_route(self, mock_insert, client, database):
         """Testa se a rota POST /linha insere linhas com sucesso"""
         mock_insert.return_value = 1
@@ -213,7 +216,7 @@ class TestLinha:
         assert data["message"] == "linhas inseridas com sucesso"
         assert data["counter"] == 1
 
-    @patch("handlers.linha.updateLinha")
+    @patch("routes.linha.LinhaService.update_linha")
     def test_update_route(self, mock_update, client, database):
         """Testa se a rota PATCH /linha atualiza linhas com sucesso"""
         mock_update.return_value = 1
@@ -233,7 +236,7 @@ class TestLinha:
         assert data["message"] == "linha atualizada com sucesso"
         assert data["counter"] == 1
 
-    @patch("handlers.linha.deleteLinha")
+    @patch("routes.linha.LinhaService.delete_linha")
     def test_delete_route(self, mock_delete, client, database):
         """Testa se a rota DELETE /linha/<COD_LINH> deleta linhas com sucesso"""
         mock_delete.return_value = 1
@@ -243,4 +246,3 @@ class TestLinha:
         data = json.loads(response.data)
         assert data["message"] == "linha deletada com sucesso"
         assert data["counter"] == 1
-
