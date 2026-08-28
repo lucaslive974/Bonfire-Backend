@@ -2,9 +2,8 @@ from flask_cors import CORS
 from flask import Flask, Response, request, jsonify
 
 from routes import autoinfracao, recursos, veiculos, linha, consorcio
-from handlers.log import logger, http_logger
-
-from handlers.authenticator import Authenticator, KeyCloakAuthenticator
+from utils.logger import logger, http_logger
+from services.authenticator import Authenticator, KeyCloakAuthenticator
 from repositories.database import check_database_connection
 from exceptions.CustomExceptions import CustomException
 

@@ -1,5 +1,5 @@
 from waitress import serve
-from handlers.log import logger
+from utils.logger import logger
 
 from app import BonfireApp
 from classes.BonfireArgumentParser import BonfireArgumentParser
