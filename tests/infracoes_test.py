@@ -6,10 +6,15 @@ from unittest.mock import patch
 
 @pytest.mark.usefixtures("app", "client", "database")
 class TestInfracoes:
-    @patch("routes.autoinfracao.AutoInfracaoService.insert_infracoes_csv")
-    def test_post_csv_route(self, mock_insert, client, database):
+    @patch("services.document_parser.factory.PyIngestionParserFactory.create_infracoes_csv_parser")
+    def test_post_csv_route(self, mock_create, client, database):
         """Testa se a rota POST /infracao/csv importa com sucesso"""
-        mock_insert.return_value = 5
+        from unittest.mock import MagicMock
+        mock_extractor = MagicMock()
+        def fake_extract(stream, observer):
+            observer.metrics["rows_processed"] = 5
+        mock_extractor.extract.side_effect = fake_extract
+        mock_create.return_value = mock_extractor
 
         data = {
             "file": (
@@ -27,10 +32,15 @@ class TestInfracoes:
         res_data = json.loads(response.data)
         assert res_data["message"] == "5 autos de infração importados"
 
-    @patch("routes.autoinfracao.AutoInfracaoService.insert_infracoes_xls")
-    def test_post_xls_route(self, mock_insert, client, database):
+    @patch("services.document_parser.factory.PyIngestionParserFactory.create_infracoes_xls_parser")
+    def test_post_xls_route(self, mock_create, client, database):
         """Testa se a rota POST /infracao/xls insere com sucesso"""
-        mock_insert.return_value = 10
+        from unittest.mock import MagicMock
+        mock_extractor = MagicMock()
+        def fake_extract(stream, observer):
+            observer.metrics["rows_processed"] = 10
+        mock_extractor.extract.side_effect = fake_extract
+        mock_create.return_value = mock_extractor
 
         data = {"file": (BytesIO(b"dummy excel content"), "test.xls")}
 

@@ -143,11 +143,13 @@ class TestRecursoRoutes:
         assert data == {"recurses": [{"NUM_RECURSO": "321"}]}
         mock_get.assert_called_once_with("2026-06-20")
 
-    @patch("routes.recursos.RecursoService.insert_primeira_instancia")
-    @patch("routes.recursos.RecursoService.parse_docx")
-    def test_post_primeira_instancia_route(self, mock_parse: MagicMock, mock_insert: MagicMock, client: Any, database: Any):
-        mock_parse.return_value = [{"NUM_RECURSO": "123"}]
-        mock_insert.return_value = 5
+    @patch("services.document_parser.factory.PyIngestionParserFactory.create_primeira_instancia_parser")
+    def test_post_primeira_instancia_route(self, mock_create: MagicMock, client: Any, database: Any):
+        mock_extractor = MagicMock()
+        def fake_extract(stream, observer):
+            observer.metrics["rows_processed"] = 5
+        mock_extractor.extract.side_effect = fake_extract
+        mock_create.return_value = mock_extractor
 
         data = {"file": (BytesIO(b"docx content"), "test.docx")}
         response = client.post("/recurso/primeiraInstancia/resultado", data=data, content_type="multipart/form-data")
@@ -164,11 +166,13 @@ class TestRecursoRoutes:
         res_data = response.get_json()
         assert res_data["error"] == "Incomplete Data"
 
-    @patch("routes.recursos.RecursoService.insert_segunda_instancia")
-    @patch("routes.recursos.RecursoService.parse_docx")
-    def test_post_segunda_instancia_route(self, mock_parse: MagicMock, mock_insert: MagicMock, client: Any, database: Any):
-        mock_parse.return_value = [{"NUM_RECURSO": "321"}]
-        mock_insert.return_value = 10
+    @patch("services.document_parser.factory.PyIngestionParserFactory.create_segunda_instancia_parser")
+    def test_post_segunda_instancia_route(self, mock_create: MagicMock, client: Any, database: Any):
+        mock_extractor = MagicMock()
+        def fake_extract(stream, observer):
+            observer.metrics["rows_processed"] = 10
+        mock_extractor.extract.side_effect = fake_extract
+        mock_create.return_value = mock_extractor
 
         data = {"file": (BytesIO(b"docx content"), "test.docx")}
         response = client.post("/recurso/segundaInstancia/resultado", data=data, content_type="multipart/form-data")

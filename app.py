@@ -6,6 +6,7 @@ from utils.logger import logger, http_logger
 from services.authenticator import Authenticator, KeyCloakAuthenticator
 from repositories.database import check_database_connection
 from exceptions.CustomExceptions import CustomException
+from services.document_parser.factory import PyIngestionParserFactory
 
 
 class BonfireApp(Flask):
@@ -27,6 +28,11 @@ class BonfireApp(Flask):
         check_database_connection()
         self._authController = KeyCloakAuthenticator()
         self._authController.checkConnection()
+
+        # Initialize Document Parser Abstract Factory
+        if not hasattr(self, 'extensions'):
+            self.extensions = {}
+        self.extensions['parser_factory'] = PyIngestionParserFactory()
 
         # Custom domain exception handler
         @self.errorhandler(CustomException)

@@ -2,7 +2,8 @@ import os
 import tempfile
 import pytest
 from docx import Document
-from services.parsers import normalize_auto_infraction_id, parse_docx_recursos
+from services.parsers import normalize_auto_infraction_id
+from services.document_parser.streams import RecursosDocxInputStream
 from exceptions.CustomExceptions import ErrDataPubli
 
 
@@ -40,8 +41,9 @@ def test_parse_docx_recursos():
         
         doc.save(doc_path)
 
-        # Parse the docx
-        recursos = parse_docx_recursos(doc_path, first_instance=True)
+        # Parse the docx using the new InputStream
+        stream = RecursosDocxInputStream(first_instance=True)
+        recursos = list(stream.read(doc_path))
         assert len(recursos) == 1
         recurso = recursos[0]
         assert recurso["NUM_RECURSO"] == "123/2026"
@@ -66,7 +68,8 @@ def test_parse_docx_recursos_missing_date():
         doc.save(doc_path)
 
         with pytest.raises(ErrDataPubli):
-            parse_docx_recursos(doc_path, first_instance=True)
+            stream = RecursosDocxInputStream(first_instance=True)
+            list(stream.read(doc_path))
 
     finally:
         if os.path.exists(doc_path):

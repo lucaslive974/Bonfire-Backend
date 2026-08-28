@@ -4,13 +4,25 @@ from services.autoinfracao_service import AutoInfracaoService
 
 AutoInfracaoBlueprint = Blueprint('infracao', __name__)
 
+from flask import current_app
+from services.document_parser.core import ExtractionObserver
+from services.document_parser.exceptions import DocumentParsingError
+
 @AutoInfracaoBlueprint.route("/infracao/csv", methods=["POST"])
 def post_csv():
     if 'file' not in request.files:
         raise ErrIncompleteData("Arquivo CSV de infrações não está presente na requisição", 400)
     file = request.files['file']
-    response = AutoInfracaoService.insert_infracoes_csv(file)
-    return jsonify({"message": f"{response} autos de infração importados"}), 200
+    
+    factory = current_app.extensions.get('parser_factory')
+    if not factory:
+        raise ErrIncompleteData("ParserFactory not configured", 500)
+        
+    extractor = factory.create_infracoes_csv_parser()
+    observer = ExtractionObserver()
+    extractor.extract(file.stream, observer)
+    
+    return jsonify({"message": f"{observer.metrics.get('rows_processed', 0)} autos de infração importados"}), 200
 
 @AutoInfracaoBlueprint.route("/infracao/xls", methods=["POST"])
 def post_xls():
@@ -19,8 +31,16 @@ def post_xls():
     file = request.files['file']
     insert_ignore_val = request.args.get("insert_ignore", "true")
     insert_ignore = str(insert_ignore_val).lower() == "true"
-    response = AutoInfracaoService.insert_infracoes_xls(file, insert_ignore)
-    return jsonify({"message": f"{response} autos inseridos com sucesso"}), 200
+    
+    factory = current_app.extensions.get('parser_factory')
+    if not factory:
+        raise ErrIncompleteData("ParserFactory not configured", 500)
+        
+    extractor = factory.create_infracoes_xls_parser(ignore=insert_ignore)
+    observer = ExtractionObserver()
+    extractor.extract(file.stream, observer)
+    
+    return jsonify({"message": f"{observer.metrics.get('rows_processed', 0)} autos inseridos com sucesso"}), 200
 
 @AutoInfracaoBlueprint.route("/infracao", methods=["GET"])
 def get_infracoes():
