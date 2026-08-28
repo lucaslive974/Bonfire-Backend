@@ -2,6 +2,7 @@ from typing import List, Dict, Any
 from datetime import datetime
 from sqlalchemy.orm import Session
 from classes.Linha import Linha
+from repositories.models.linha_model import LinhaModel
 from exceptions.CustomExceptions import ErrUpdateData
 
 
@@ -9,31 +10,48 @@ class LinhaRepository:
     def __init__(self, db: Session):
         self.db = db
 
+    def _to_domain(self, model: LinhaModel | None) -> Linha | None:
+        if model is None:
+            return None
+        return Linha(
+            COD_LINH=model.COD_LINH,
+            ID_OPERADORA=model.ID_OPERADORA,
+            COMPARTILHADA=model.COMPARTILHADA,
+            LINH_ATIV_EMPR=model.LINH_ATIV_EMPR,
+            DAT_BAIX=model.DAT_BAIX,
+        )
+
+    def _to_model(self, entity: Linha) -> LinhaModel:
+        return LinhaModel(
+            COD_LINH=entity.COD_LINH,
+            ID_OPERADORA=entity.ID_OPERADORA,
+            COMPARTILHADA=entity.COMPARTILHADA,
+            LINH_ATIV_EMPR=entity.LINH_ATIV_EMPR,
+            DAT_BAIX=entity.DAT_BAIX,
+        )
+
     def get_all(self) -> List[Linha]:
-        return self.db.query(Linha).all()
+        models = self.db.query(LinhaModel).all()
+        return [self._to_domain(m) for m in models if m is not None]
 
     def get_by_id(self, cod_linh: str) -> Linha | None:
-        return self.db.query(Linha).filter(Linha.COD_LINH == cod_linh).first()
+        model = self.db.query(LinhaModel).filter(LinhaModel.COD_LINH == cod_linh).first()
+        return self._to_domain(model)
 
     def insert_bulk(self, linhas_data: List[Dict[str, Any]]) -> int:
         counter = 0
         for data in linhas_data:
             cod_linh = data.get("COD_LINH")
             if cod_linh is not None:
-                dat_baix = data.get("DAT_BAIX")
-                if isinstance(dat_baix, str):
-                    try:
-                        dat_baix = datetime.fromisoformat(dat_baix)
-                    except ValueError:
-                        dat_baix = None
                 linha = Linha(
                     COD_LINH=str(cod_linh),
                     ID_OPERADORA=data.get("ID_OPERADORA"),
                     COMPARTILHADA=bool(data.get("COMPARTILHADA", False)),
                     LINH_ATIV_EMPR=bool(data.get("LINH_ATIV_EMPR", True)),
-                    DAT_BAIX=dat_baix,
+                    DAT_BAIX=data.get("DAT_BAIX"),
                 )
-                self.db.merge(linha)
+                model = self._to_model(linha)
+                self.db.merge(model)
                 counter += 1
         return counter
 
@@ -42,45 +60,19 @@ class LinhaRepository:
         for data in linhas_data:
             cod_linh = data.get("COD_LINH")
             if isinstance(cod_linh, str):
-                linha = self.get_by_id(cod_linh)
-                if linha:
-                    if "COMPARTILHADA" in data:
-                        linha.COMPARTILHADA = bool(data.get("COMPARTILHADA"))
-                    if "ID_OPERADORA" in data:
-                        linha.ID_OPERADORA = data.get("ID_OPERADORA")
-                    if "LINH_ATIV_EMPR" in data:
-                        novo_status = bool(data.get("LINH_ATIV_EMPR"))
-                        if not novo_status:
-                            if not linha.LINH_ATIV_EMPR:
-                                raise ErrUpdateData(
-                                    f"Linha {cod_linh} já se encontra baixada",
-                                    400,
-                                )
-                            linha.LINH_ATIV_EMPR = False
-                            dat_baix = data.get("DAT_BAIX")
-                            if isinstance(dat_baix, str):
-                                try:
-                                    dat_baix = datetime.fromisoformat(dat_baix)
-                                except ValueError:
-                                    dat_baix = datetime.now()
-                            linha.DAT_BAIX = (
-                                dat_baix if dat_baix is not None else datetime.now()
-                            )
-                        else:
-                            linha.LINH_ATIV_EMPR = True
-                            linha.DAT_BAIX = None
-                    elif "DAT_BAIX" in data:
-                        dat_baix = data.get("DAT_BAIX")
-                        if isinstance(dat_baix, str):
-                            try:
-                                dat_baix = datetime.fromisoformat(dat_baix)
-                            except ValueError:
-                                dat_baix = None
-                        linha.DAT_BAIX = dat_baix
-                    self.db.merge(linha)
-                    counter += 1
+                model = self.db.query(LinhaModel).filter(LinhaModel.COD_LINH == cod_linh).first()
+                if model:
+                    linha = self._to_domain(model)
+                    if linha:
+                        linha.atualizar(data)
+                        model.COMPARTILHADA = linha.COMPARTILHADA
+                        model.ID_OPERADORA = linha.ID_OPERADORA
+                        model.LINH_ATIV_EMPR = linha.LINH_ATIV_EMPR
+                        model.DAT_BAIX = linha.DAT_BAIX
+                        self.db.merge(model)
+                        counter += 1
         return counter
 
     def delete(self, cod_linh: str) -> int:
-        deleted = self.db.query(Linha).filter(Linha.COD_LINH == cod_linh).delete()
+        deleted = self.db.query(LinhaModel).filter(LinhaModel.COD_LINH == cod_linh).delete()
         return deleted

@@ -1,53 +1,63 @@
-from sqlalchemy import Column, String, Integer, DateTime, Float
-from classes.Base import Base
+from datetime import datetime
+from typing import Any, Dict
+from classes.Mixins import SerializableMixin
 
-class AutoInfracao(Base):
-    __tablename__ = 'auto_infracao'
 
-    NUM_AI = Column(String(10), primary_key=True)
-    NUM_NOTF = Column(String(10), unique=True, nullable=True)
-    TIP_PENL = Column(String(20), nullable=True)
-    NOM_CONC = Column(String(100), nullable=True)
-    COD_LINH = Column(String(10), nullable=True)
-    NOM_LINH = Column(String(100), nullable=True)
-    NUM_VEIC = Column(Integer, nullable=True)
-    IDN_PLAC_VEIC = Column(String(10), nullable=True)
-    DAT_OCOR_INFR = Column(DateTime, nullable=True)
-    DES_LOCA = Column(String(255), nullable=True)
-    COD_IRRG_FISC = Column(Integer, nullable=True)
-    ARTIGO = Column(String(20), nullable=True)
-    DES_OBSE = Column(String(255), nullable=True)
-    NUM_MATR_FISC = Column(Integer, nullable=True)
-    QTE_PONT = Column(Integer, nullable=True)
-    DAT_EMIS_NOTF = Column(DateTime, nullable=True)
-    DAT_LIMT_RECU = Column(DateTime, nullable=True)
-    VAL_INFR = Column(Float, nullable=True)
-    DAT_CANC = Column(DateTime, nullable=True)
+class AutoInfracao(SerializableMixin):
+    """Entidade pura de domínio para Auto de Infração."""
 
-    def __init__(self, **kwargs):
-        # Support kwargs initialization
+    def __init__(
+        self,
+        NUM_AI: str | None = None,
+        NUM_NOTF: str | None = None,
+        TIP_PENL: str | None = None,
+        NOM_CONC: str | None = None,
+        COD_LINH: str | None = None,
+        NOM_LINH: str | None = None,
+        NUM_VEIC: int | None = None,
+        IDN_PLAC_VEIC: str | None = None,
+        DAT_OCOR_INFR: datetime | str | None = None,
+        DES_LOCA: str | None = None,
+        COD_IRRG_FISC: int | None = None,
+        ARTIGO: str | None = None,
+        DES_OBSE: str | None = None,
+        NUM_MATR_FISC: int | None = None,
+        QTE_PONT: int | None = None,
+        DAT_EMIS_NOTF: datetime | str | None = None,
+        DAT_LIMT_RECU: datetime | str | None = None,
+        VAL_INFR: float | None = None,
+        DAT_CANC: datetime | str | None = None,
+        **kwargs: Any,
+    ):
+        self.NUM_AI = NUM_AI
+        self.NUM_NOTF = NUM_NOTF
+        self.TIP_PENL = TIP_PENL
+        self.NOM_CONC = NOM_CONC
+        self.COD_LINH = COD_LINH
+        self.NOM_LINH = NOM_LINH
+        self.NUM_VEIC = int(NUM_VEIC) if NUM_VEIC is not None else None
+        self.IDN_PLAC_VEIC = IDN_PLAC_VEIC
+        self.DAT_OCOR_INFR = self._parse_datetime(DAT_OCOR_INFR)
+        self.DES_LOCA = DES_LOCA
+        self.COD_IRRG_FISC = int(COD_IRRG_FISC) if COD_IRRG_FISC is not None else None
+        self.ARTIGO = ARTIGO
+        self.DES_OBSE = DES_OBSE
+        self.NUM_MATR_FISC = int(NUM_MATR_FISC) if NUM_MATR_FISC is not None else None
+        self.QTE_PONT = int(QTE_PONT) if QTE_PONT is not None else None
+        self.DAT_EMIS_NOTF = self._parse_datetime(DAT_EMIS_NOTF)
+        self.DAT_LIMT_RECU = self._parse_datetime(DAT_LIMT_RECU)
+        self.VAL_INFR = float(VAL_INFR) if VAL_INFR is not None else None
+        self.DAT_CANC = self._parse_datetime(DAT_CANC)
+
         for key, value in kwargs.items():
-            setattr(self, key, value)
+            if not hasattr(self, key):
+                setattr(self, key, value)
 
-    def to_dict(self) -> dict:
-        return {
-            'NUM_NOTF': self.NUM_NOTF,
-            'TIP_PENL': self.TIP_PENL,
-            'NUM_AI': self.NUM_AI,
-            'NOM_CONC': self.NOM_CONC,
-            'COD_LINH': self.COD_LINH,
-            'NOM_LINH': self.NOM_LINH,
-            'NUM_VEIC': self.NUM_VEIC,
-            'IDN_PLAC_VEIC': self.IDN_PLAC_VEIC,
-            'DAT_OCOR_INFR': self.DAT_OCOR_INFR.isoformat() if self.DAT_OCOR_INFR is not None else None,
-            'DES_LOCA': self.DES_LOCA,
-            'COD_IRRG_FISC': self.COD_IRRG_FISC,
-            'ARTIGO': self.ARTIGO,
-            'DES_OBSE': self.DES_OBSE,
-            'NUM_MATR_FISC': self.NUM_MATR_FISC,
-            'QTE_PONT': self.QTE_PONT,
-            'DAT_EMIS_NOTF': self.DAT_EMIS_NOTF.isoformat() if self.DAT_EMIS_NOTF is not None else None,
-            'DAT_LIMT_RECU': self.DAT_LIMT_RECU.isoformat() if self.DAT_LIMT_RECU is not None else None,
-            'VAL_INFR': self.VAL_INFR,
-            'DAT_CANC': self.DAT_CANC.isoformat() if self.DAT_CANC is not None else None
-        }
+    @staticmethod
+    def _parse_datetime(value: datetime | str | None) -> datetime | None:
+        if isinstance(value, str):
+            try:
+                return datetime.fromisoformat(value)
+            except ValueError:
+                return None
+        return value

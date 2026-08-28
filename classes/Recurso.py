@@ -1,44 +1,77 @@
-from sqlalchemy import Column, Integer, String, Boolean, Date
-from classes.Base import Base
+from datetime import date, datetime
+from typing import Any
+from classes.Mixins import SerializableMixin
 
-class RecursoPrimeiraInstancia(Base):
-    __tablename__ = 'recurso_primeira_instancia'
 
-    ID = Column(Integer, primary_key=True, autoincrement=True)
-    NUM_AI = Column(String(15), unique=True, nullable=True)
-    NUM_ATA = Column(Integer, nullable=True)
-    NUM_RECURSO = Column(String(15), nullable=True)
-    NOM_CONC = Column(String(100), nullable=True)
-    RESULTADO = Column(Boolean, nullable=False)
-    DAT_PUBL = Column(Date, nullable=True)
+class RecursoPrimeiraInstancia(SerializableMixin):
+    """Entidade pura de domínio para Recurso de Primeira Instância."""
 
-    def to_dict(self) -> dict:
-        return {
-            'ID': self.ID,
-            'NUM_AI': self.NUM_AI,
-            'NUM_ATA': self.NUM_ATA,
-            'NUM_RECURSO': self.NUM_RECURSO,
-            'NOM_CONC': self.NOM_CONC,
-            'RESULTADO': self.RESULTADO,
-            'DAT_PUBL': self.DAT_PUBL.isoformat() if self.DAT_PUBL is not None else None
-        }
+    def __init__(
+        self,
+        ID: int | None = None,
+        NUM_AI: str | None = None,
+        NUM_ATA: int | str | None = None,
+        NUM_RECURSO: str | None = None,
+        NOM_CONC: str | None = None,
+        RESULTADO: bool = False,
+        DAT_PUBL: date | datetime | str | None = None,
+        **kwargs: Any,
+    ):
+        self.ID = int(ID) if ID is not None else None
+        self.NUM_AI = NUM_AI
+        self.NUM_ATA = int(NUM_ATA) if NUM_ATA is not None else None
+        self.NUM_RECURSO = NUM_RECURSO
+        self.NOM_CONC = NOM_CONC
+        self.RESULTADO = bool(RESULTADO)
+        self.DAT_PUBL = self._parse_date(DAT_PUBL)
 
-class RecursoSegundaInstancia(Base):
-    __tablename__ = 'recurso_segunda_instancia'
+        for key, value in kwargs.items():
+            if not hasattr(self, key):
+                setattr(self, key, value)
 
-    ID = Column(Integer, primary_key=True, autoincrement=True)
-    NUM_AI = Column(String(15), unique=True, nullable=True)
-    NUM_RECURSO = Column(String(15), nullable=True)
-    NOM_CONC = Column(String(100), nullable=True)
-    RESULTADO = Column(Boolean, nullable=False)
-    DAT_PUBL = Column(Date, nullable=True)
+    @staticmethod
+    def _parse_date(value: date | datetime | str | None) -> date | None:
+        if isinstance(value, str):
+            try:
+                return datetime.fromisoformat(value).date() if "T" in value or " " in value else date.fromisoformat(value)
+            except ValueError:
+                return None
+        if isinstance(value, datetime):
+            return value.date()
+        return value
 
-    def to_dict(self) -> dict:
-        return {
-            'ID': self.ID,
-            'NUM_AI': self.NUM_AI,
-            'NUM_RECURSO': self.NUM_RECURSO,
-            'NOM_CONC': self.NOM_CONC,
-            'RESULTADO': self.RESULTADO,
-            'DAT_PUBL': self.DAT_PUBL.isoformat() if self.DAT_PUBL is not None else None
-        }
+
+class RecursoSegundaInstancia(SerializableMixin):
+    """Entidade pura de domínio para Recurso de Segunda Instância."""
+
+    def __init__(
+        self,
+        ID: int | None = None,
+        NUM_AI: str | None = None,
+        NUM_RECURSO: str | None = None,
+        NOM_CONC: str | None = None,
+        RESULTADO: bool = False,
+        DAT_PUBL: date | datetime | str | None = None,
+        **kwargs: Any,
+    ):
+        self.ID = int(ID) if ID is not None else None
+        self.NUM_AI = NUM_AI
+        self.NUM_RECURSO = NUM_RECURSO
+        self.NOM_CONC = NOM_CONC
+        self.RESULTADO = bool(RESULTADO)
+        self.DAT_PUBL = self._parse_date(DAT_PUBL)
+
+        for key, value in kwargs.items():
+            if not hasattr(self, key):
+                setattr(self, key, value)
+
+    @staticmethod
+    def _parse_date(value: date | datetime | str | None) -> date | None:
+        if isinstance(value, str):
+            try:
+                return datetime.fromisoformat(value).date() if "T" in value or " " in value else date.fromisoformat(value)
+            except ValueError:
+                return None
+        if isinstance(value, datetime):
+            return value.date()
+        return value

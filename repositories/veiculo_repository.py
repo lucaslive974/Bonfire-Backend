@@ -2,6 +2,7 @@ from typing import List, Dict, Any
 from datetime import datetime
 from sqlalchemy.orm import Session
 from classes.Veiculo import Veiculo
+from repositories.models.veiculo_model import VeiculoModel
 from exceptions.CustomExceptions import ErrUpdateData
 
 
@@ -9,14 +10,35 @@ class VeiculoRepository:
     def __init__(self, db: Session):
         self.db = db
 
+    def _to_domain(self, model: VeiculoModel | None) -> Veiculo | None:
+        if model is None:
+            return None
+        return Veiculo(
+            NUM_VEIC=model.NUM_VEIC,
+            IDN_PLAC_VEIC=model.IDN_PLAC_VEIC,
+            VEIC_ATIV_EMPR=model.VEIC_ATIV_EMPR,
+            DAT_BAIX=model.DAT_BAIX,
+        )
+
+    def _to_model(self, entity: Veiculo) -> VeiculoModel:
+        return VeiculoModel(
+            NUM_VEIC=entity.NUM_VEIC,
+            IDN_PLAC_VEIC=entity.IDN_PLAC_VEIC,
+            VEIC_ATIV_EMPR=entity.VEIC_ATIV_EMPR,
+            DAT_BAIX=entity.DAT_BAIX,
+        )
+
     def get_all(self) -> List[Veiculo]:
-        return self.db.query(Veiculo).all()
+        models = self.db.query(VeiculoModel).all()
+        return [self._to_domain(m) for m in models if m is not None]
 
     def get_by_id(self, num_veic: int) -> Veiculo | None:
-        return self.db.query(Veiculo).filter(Veiculo.NUM_VEIC == num_veic).first()
+        model = self.db.query(VeiculoModel).filter(VeiculoModel.NUM_VEIC == num_veic).first()
+        return self._to_domain(model)
 
     def insert(self, veiculo: Veiculo) -> bool:
-        self.db.add(veiculo)
+        model = self._to_model(veiculo)
+        self.db.add(model)
         return True
 
     def insert_bulk(self, veiculos_data: List[Dict[str, Any]]) -> int:
@@ -24,19 +46,14 @@ class VeiculoRepository:
         for data in veiculos_data:
             num_veic = data.get("NUM_VEIC")
             if num_veic is not None:
-                dat_baix = data.get("DAT_BAIX")
-                if isinstance(dat_baix, str):
-                    try:
-                        dat_baix = datetime.fromisoformat(dat_baix)
-                    except ValueError:
-                        dat_baix = None
                 veiculo = Veiculo(
                     NUM_VEIC=int(num_veic),
                     IDN_PLAC_VEIC=data.get("IDN_PLAC_VEIC"),
                     VEIC_ATIV_EMPR=bool(data.get("VEIC_ATIV_EMPR", True)),
-                    DAT_BAIX=dat_baix,
+                    DAT_BAIX=data.get("DAT_BAIX"),
                 )
-                self.db.merge(veiculo)
+                model = self._to_model(veiculo)
+                self.db.merge(model)
                 counter += 1
         return counter
 
@@ -49,44 +66,18 @@ class VeiculoRepository:
                     num_veic_int = int(num_veic)
                 except (ValueError, TypeError):
                     continue
-                veiculo = self.get_by_id(num_veic_int)
-                if veiculo:
-                    if "IDN_PLAC_VEIC" in data:
-                        val = data.get("IDN_PLAC_VEIC")
-                        veiculo.IDN_PLAC_VEIC = str(val) if val else None
-                    if "VEIC_ATIV_EMPR" in data:
-                        novo_status = bool(data.get("VEIC_ATIV_EMPR"))
-                        if not novo_status:
-                            if not veiculo.VEIC_ATIV_EMPR:
-                                raise ErrUpdateData(
-                                    f"Veículo {num_veic_int} já se encontra baixado",
-                                    400,
-                                )
-                            veiculo.VEIC_ATIV_EMPR = False
-                            dat_baix = data.get("DAT_BAIX")
-                            if isinstance(dat_baix, str):
-                                try:
-                                    dat_baix = datetime.fromisoformat(dat_baix)
-                                except ValueError:
-                                    dat_baix = datetime.now()
-                            veiculo.DAT_BAIX = (
-                                dat_baix if dat_baix is not None else datetime.now()
-                            )
-                        else:
-                            veiculo.VEIC_ATIV_EMPR = True
-                            veiculo.DAT_BAIX = None
-                    elif "DAT_BAIX" in data:
-                        dat_baix = data.get("DAT_BAIX")
-                        if isinstance(dat_baix, str):
-                            try:
-                                dat_baix = datetime.fromisoformat(dat_baix)
-                            except ValueError:
-                                dat_baix = None
-                        veiculo.DAT_BAIX = dat_baix
-                    self.db.merge(veiculo)
-                    counter += 1
+                model = self.db.query(VeiculoModel).filter(VeiculoModel.NUM_VEIC == num_veic_int).first()
+                if model:
+                    veiculo = self._to_domain(model)
+                    if veiculo:
+                        veiculo.atualizar(data)
+                        model.IDN_PLAC_VEIC = veiculo.IDN_PLAC_VEIC
+                        model.VEIC_ATIV_EMPR = veiculo.VEIC_ATIV_EMPR
+                        model.DAT_BAIX = veiculo.DAT_BAIX
+                        self.db.merge(model)
+                        counter += 1
         return counter
 
     def delete(self, num_veic: int) -> int:
-        deleted = self.db.query(Veiculo).filter(Veiculo.NUM_VEIC == num_veic).delete()
+        deleted = self.db.query(VeiculoModel).filter(VeiculoModel.NUM_VEIC == num_veic).delete()
         return deleted
