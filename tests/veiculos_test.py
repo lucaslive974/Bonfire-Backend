@@ -1,5 +1,4 @@
 import pytest
-import json
 from datetime import datetime
 from unittest.mock import patch, MagicMock
 
@@ -148,10 +147,9 @@ def test_service_get_veiculos(mock_repo_cls, mock_get_db):
     mock_repo.get_all.return_value = [mock_veic]
 
     res = VeiculoService.get_veiculos()
-    data = json.loads(res)
-    assert len(data) == 1
-    assert data[0]["NUM_VEIC"] == 1111
-    assert data[0]["DAT_BAIX"] == "2026-08-28T12:00:00"
+    assert len(res) == 1
+    assert res[0]["NUM_VEIC"] == 1111
+    assert res[0]["DAT_BAIX"] == "2026-08-28T12:00:00"
 
 
 @pytest.mark.usefixtures("app", "client", "database")
@@ -159,14 +157,14 @@ class TestVeiculos:
     @patch("routes.veiculos.VeiculoService.get_veiculos")
     def test_get_route(self, mock_get, client, database):
         """Testa se a rota GET /veiculos retorna 200 e a lista correta"""
-        mock_get.return_value = (
-            '[{"NUM_VEIC": 1111, "IDN_PLAC_VEIC": "OPC123", "VEIC_ATIV_EMPR": false, "DAT_BAIX": null}]'
-        )
+        mock_get.return_value = [
+            {"NUM_VEIC": 1111, "IDN_PLAC_VEIC": "OPC123", "VEIC_ATIV_EMPR": False, "DAT_BAIX": None}
+        ]
 
         response = client.get("/veiculos")
 
         assert response.status_code == 200
-        data = json.loads(response.data)
+        data = response.get_json()
         assert "veiculos" in data
         assert len(data["veiculos"]) == 1
         assert data["veiculos"][0]["NUM_VEIC"] == 1111
@@ -175,14 +173,14 @@ class TestVeiculos:
     @patch("routes.veiculos.VeiculoService.get_veiculos")
     def test_get_route_with_data_baixa(self, mock_get, client, database):
         """Testa se a rota GET /veiculos retorna 200 com DAT_BAIX preenchido"""
-        mock_get.return_value = (
-            '[{"NUM_VEIC": 2222, "IDN_PLAC_VEIC": "ABC1234", "VEIC_ATIV_EMPR": false, "DAT_BAIX": "2026-08-28T10:30:00"}]'
-        )
+        mock_get.return_value = [
+            {"NUM_VEIC": 2222, "IDN_PLAC_VEIC": "ABC1234", "VEIC_ATIV_EMPR": False, "DAT_BAIX": "2026-08-28T10:30:00"}
+        ]
 
         response = client.get("/veiculos")
 
         assert response.status_code == 200
-        data = json.loads(response.data)
+        data = response.get_json()
         assert "veiculos" in data
         assert len(data["veiculos"]) == 1
         assert data["veiculos"][0]["NUM_VEIC"] == 2222
@@ -200,7 +198,7 @@ class TestVeiculos:
         response = client.post("/veiculos", json=payload)
 
         assert response.status_code == 201
-        data = json.loads(response.data)
+        data = response.get_json()
         assert data["message"] == "Veículos inseridos com sucesso"
         assert data["counter"] == 1
 
@@ -216,7 +214,7 @@ class TestVeiculos:
         response = client.patch("/veiculos", json=payload)
 
         assert response.status_code == 202
-        data = json.loads(response.data)
+        data = response.get_json()
         assert data["message"] == "Veículos atualizados com sucesso"
         assert data["counter"] == 1
 
@@ -228,6 +226,6 @@ class TestVeiculos:
         response = client.delete("/veiculos/1111")
 
         assert response.status_code == 202
-        data = json.loads(response.data)
+        data = response.get_json()
         assert data["message"] == "Veículos deletados com sucesso"
         assert data["counter"] == 1

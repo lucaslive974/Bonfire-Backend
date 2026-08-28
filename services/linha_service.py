@@ -1,4 +1,3 @@
-import json
 from typing import List, Dict, Any
 from repositories.database import get_db
 from repositories.linha_repository import LinhaRepository
@@ -8,13 +7,12 @@ class LinhaService:
     """Serviço de domínio para casos de uso de Linhas."""
 
     @staticmethod
-    def get_linha() -> str:
-        """Recupera os dados das linhas no banco de dados em formato JSON string."""
+    def get_linha() -> List[Dict[str, Any]]:
+        """Recupera os dados das linhas no banco de dados."""
         with get_db() as db:
             repo = LinhaRepository(db)
             linhas = repo.get_all()
-            data = [l.as_dict() for l in linhas]
-            return json.dumps(data)
+            return [l.as_dict() for l in linhas]
 
     @staticmethod
     def insert_linha(line_data: List[Dict[str, Any]]) -> int:

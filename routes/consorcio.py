@@ -1,4 +1,3 @@
-import json
 from flask import Blueprint, jsonify, request
 from services.consorcio_service import ConsorcioService
 from utils.validators import checkKeysInJson
@@ -10,7 +9,7 @@ keys_to_check = ["ID", "NOME", "CONCESSIONARIA"]
 def execute_route_get_consorcio():
     """Rota para buscar todos os consórcios"""
     response = ConsorcioService.get_consorcios()
-    return jsonify({"consorcios": json.loads(response)})
+    return jsonify({"consorcios": response}), 200
 
 @consorcioBlueprint.route("/consorcio", methods=["POST"])
 def execute_route_post_consorcio():

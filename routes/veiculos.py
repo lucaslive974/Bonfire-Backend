@@ -1,4 +1,3 @@
-import json
 from flask import Blueprint, jsonify, request
 from services.veiculo_service import VeiculoService
 from utils.validators import checkKeysInJson
@@ -9,7 +8,7 @@ keys_to_check = ["NUM_VEIC", "IDN_PLAC_VEIC", "VEIC_ATIV_EMPR"]
 @veiculoBlueprint.route("/veiculos", methods=["GET"])
 def executeRouteGetVeiculo():
     result = VeiculoService.get_veiculos()
-    return jsonify({"veiculos": json.loads(result)})
+    return jsonify({"veiculos": result}), 200
 
 @veiculoBlueprint.route("/veiculos", methods=["POST"])
 def executeRoutePostVeiculos():

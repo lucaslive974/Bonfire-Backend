@@ -1,4 +1,3 @@
-import json
 from typing import List, Dict, Any
 from repositories.database import get_db
 from repositories.veiculo_repository import VeiculoRepository
@@ -9,13 +8,12 @@ class VeiculoService:
     """Serviço de domínio para casos de uso de Veículos."""
 
     @staticmethod
-    def get_veiculos() -> str:
-        """Recupera os veículos do banco de dados e retorna em formato JSON string."""
+    def get_veiculos() -> List[Dict[str, Any]]:
+        """Recupera os veículos do banco de dados."""
         with get_db() as db:
             repo = VeiculoRepository(db)
             veiculos = repo.get_all()
-            data = [v.as_dict() for v in veiculos]
-            return json.dumps(data)
+            return [v.as_dict() for v in veiculos]
 
     @staticmethod
     def insert_veiculos(veiculos_data: List[Dict[str, Any]]) -> int:

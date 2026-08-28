@@ -1,5 +1,4 @@
 import pytest
-import json
 from unittest.mock import patch
 
 @pytest.mark.usefixtures("app", "client", "database")
@@ -7,11 +6,11 @@ class TestConsorcio:
     @patch("routes.consorcio.ConsorcioService.get_consorcios")
     def test_get_route(self, mock_get, client, database):
         """Testa se a rota GET /consorcio retorna a lista correta de consórcios"""
-        mock_get.return_value = '[{"ID": 107, "NOME": "MILENIO TRANSPORTES", "CONCESSIONARIA": "CONSORCIO PAMPULHA"}]'
+        mock_get.return_value = [{"ID": 107, "NOME": "MILENIO TRANSPORTES", "CONCESSIONARIA": "CONSORCIO PAMPULHA"}]
 
         response = client.get("/consorcio")
         assert response.status_code == 200
-        data = json.loads(response.data)
+        data = response.get_json()
         assert "consorcios" in data
         assert len(data["consorcios"]) == 1
         assert data["consorcios"][0]["ID"] == 107
@@ -31,7 +30,7 @@ class TestConsorcio:
 
         response = client.post("/consorcio", json=payload)
         assert response.status_code == 201
-        data = json.loads(response.data)
+        data = response.get_json()
         assert data["message"] == "Consórcios inseridos com sucesso"
         assert data["counter"] == 1
 
@@ -50,7 +49,7 @@ class TestConsorcio:
 
         response = client.patch("/consorcio", json=payload)
         assert response.status_code == 200
-        data = json.loads(response.data)
+        data = response.get_json()
         assert data["message"] == "Consórcios atualizados com sucesso"
         assert data["counter"] == 1
 
@@ -69,7 +68,7 @@ class TestConsorcio:
 
         response = client.put("/consorcio", json=payload)
         assert response.status_code == 200
-        data = json.loads(response.data)
+        data = response.get_json()
         assert data["message"] == "Consórcios atualizados com sucesso"
         assert data["counter"] == 1
 
@@ -80,6 +79,6 @@ class TestConsorcio:
 
         response = client.delete("/consorcio/107")
         assert response.status_code == 200
-        data = json.loads(response.data)
+        data = response.get_json()
         assert data["message"] == "Consórcio deletado com sucesso"
         assert data["counter"] == 1

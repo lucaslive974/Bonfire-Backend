@@ -1,4 +1,3 @@
-import json
 from flask import Blueprint, jsonify, request
 from services.linha_service import LinhaService
 from utils.validators import checkKeysInJson
@@ -9,7 +8,7 @@ keys_to_check = ["COD_LINH", "ID_OPERADORA", "COMPARTILHADA",  "LINH_ATIV_EMPR"]
 @linhaBlueprint.route("/linha", methods=["GET"])
 def executeRouteGetLinha():
     result = LinhaService.get_linha()
-    return jsonify({"linha": json.loads(result)})
+    return jsonify({"linha": result}), 200
 
 @linhaBlueprint.route("/linha", methods=["POST"])
 def executeRoutePostLinha():

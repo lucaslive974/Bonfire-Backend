@@ -1,5 +1,4 @@
 import pytest
-import json
 from datetime import datetime
 from unittest.mock import patch, MagicMock
 
@@ -162,10 +161,9 @@ def test_service_get_linha(mock_repo_cls, mock_get_db):
     mock_repo.get_all.return_value = [mock_linha]
 
     res = LinhaService.get_linha()
-    data = json.loads(res)
-    assert len(data) == 1
-    assert data[0]["COD_LINH"] == "61"
-    assert data[0]["DAT_BAIX"] == "2026-08-28T12:00:00"
+    assert len(res) == 1
+    assert res[0]["COD_LINH"] == "61"
+    assert res[0]["DAT_BAIX"] == "2026-08-28T12:00:00"
 
 
 @pytest.mark.usefixtures("app", "client", "database")
@@ -173,11 +171,11 @@ class TestLinha:
     @patch("routes.linha.LinhaService.get_linha")
     def test_get_route(self, mock_get, client, database):
         """Testa se a rota GET /linha retorna a lista correta de linhas"""
-        mock_get.return_value = '[{"COD_LINH": "61", "ID_OPERADORA": 107, "COMPARTILHADA": true, "LINH_ATIV_EMPR": true, "DAT_BAIX": null}]'
+        mock_get.return_value = [{"COD_LINH": "61", "ID_OPERADORA": 107, "COMPARTILHADA": True, "LINH_ATIV_EMPR": True, "DAT_BAIX": None}]
 
         response = client.get("/linha")
         assert response.status_code == 200
-        data = json.loads(response.data)
+        data = response.get_json()
         assert "linha" in data
         assert len(data["linha"]) == 1
         assert data["linha"][0]["COD_LINH"] == "61"
@@ -186,11 +184,11 @@ class TestLinha:
     @patch("routes.linha.LinhaService.get_linha")
     def test_get_route_with_data_baixa(self, mock_get, client, database):
         """Testa se a rota GET /linha retorna a lista com DAT_BAIX preenchido"""
-        mock_get.return_value = '[{"COD_LINH": "62", "ID_OPERADORA": 108, "COMPARTILHADA": false, "LINH_ATIV_EMPR": false, "DAT_BAIX": "2026-08-28T11:00:00"}]'
+        mock_get.return_value = [{"COD_LINH": "62", "ID_OPERADORA": 108, "COMPARTILHADA": False, "LINH_ATIV_EMPR": False, "DAT_BAIX": "2026-08-28T11:00:00"}]
 
         response = client.get("/linha")
         assert response.status_code == 200
-        data = json.loads(response.data)
+        data = response.get_json()
         assert "linha" in data
         assert len(data["linha"]) == 1
         assert data["linha"][0]["COD_LINH"] == "62"
@@ -212,7 +210,7 @@ class TestLinha:
 
         response = client.post("/linha", json=payload)
         assert response.status_code == 201
-        data = json.loads(response.data)
+        data = response.get_json()
         assert data["message"] == "linhas inseridas com sucesso"
         assert data["counter"] == 1
 
@@ -232,7 +230,7 @@ class TestLinha:
 
         response = client.patch("/linha", json=payload)
         assert response.status_code == 200
-        data = json.loads(response.data)
+        data = response.get_json()
         assert data["message"] == "linha atualizada com sucesso"
         assert data["counter"] == 1
 
@@ -243,6 +241,6 @@ class TestLinha:
 
         response = client.delete("/linha/61")
         assert response.status_code == 200
-        data = json.loads(response.data)
+        data = response.get_json()
         assert data["message"] == "linha deletada com sucesso"
         assert data["counter"] == 1

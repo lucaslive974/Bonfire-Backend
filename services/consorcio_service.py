@@ -1,4 +1,3 @@
-import json
 from typing import List, Dict, Any
 from repositories.database import get_db
 from repositories.consorcio_repository import ConsorcioRepository
@@ -9,13 +8,12 @@ class ConsorcioService:
     """Serviço de domínio para casos de uso de Consórcio / Operadora."""
 
     @staticmethod
-    def get_consorcios() -> str:
-        """Retorna todos os consórcios cadastrados em formato JSON string."""
+    def get_consorcios() -> List[Dict[str, Any]]:
+        """Retorna todos os consórcios cadastrados."""
         with get_db() as db:
             repo = ConsorcioRepository(db)
             consorcios = repo.get_all()
-            data = [c.as_dict() for c in consorcios]
-            return json.dumps(data)
+            return [c.as_dict() for c in consorcios]
 
     @staticmethod
     def insert_consorcios(consorcios_data: List[Dict[str, Any]]) -> int:
