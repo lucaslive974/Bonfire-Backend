@@ -1,6 +1,9 @@
 from typing import List, Dict, Any
+from datetime import datetime
 from sqlalchemy.orm import Session
 from classes.Linha import Linha
+from exceptions.CustomExceptions import ErrUpdateData
+
 
 class LinhaRepository:
     def __init__(self, db: Session):
@@ -15,30 +18,65 @@ class LinhaRepository:
     def insert_bulk(self, linhas_data: List[Dict[str, Any]]) -> int:
         counter = 0
         for data in linhas_data:
-            linha = Linha(
-                COD_LINH=str(data.get("COD_LINH") or data.get("num_linha") or ""),
-                ID_OPERADORA=data.get("ID_OPERADORA") or data.get("id_operadora"),
-                COMPARTILHADA=bool(data.get("COMPARTILHADA") or data.get("compartilhada", False)),
-                LINH_ATIV_EMPR=bool(data.get("LINH_ATIV_EMPR", True))
-            )
-            self.db.merge(linha)
-            counter += 1
+            cod_linh = data.get("COD_LINH")
+            if cod_linh is not None:
+                dat_baix = data.get("DAT_BAIX")
+                if isinstance(dat_baix, str):
+                    try:
+                        dat_baix = datetime.fromisoformat(dat_baix)
+                    except ValueError:
+                        dat_baix = None
+                linha = Linha(
+                    COD_LINH=str(cod_linh),
+                    ID_OPERADORA=data.get("ID_OPERADORA"),
+                    COMPARTILHADA=bool(data.get("COMPARTILHADA", False)),
+                    LINH_ATIV_EMPR=bool(data.get("LINH_ATIV_EMPR", True)),
+                    DAT_BAIX=dat_baix,
+                )
+                self.db.merge(linha)
+                counter += 1
         return counter
 
     def update_bulk(self, linhas_data: List[Dict[str, Any]]) -> int:
         counter = 0
         for data in linhas_data:
-            cod_linh = data.get("COD_LINH") or data.get("num_linha")
+            cod_linh = data.get("COD_LINH")
             if isinstance(cod_linh, str):
                 linha = self.get_by_id(cod_linh)
                 if linha:
-                    if "COMPARTILHADA" in data or "compartilhada" in data:
-                        val = data.get("COMPARTILHADA")
-                        if val is None:
-                            val = data.get("compartilhada")
-                        linha.COMPARTILHADA = bool(val)
+                    if "COMPARTILHADA" in data:
+                        linha.COMPARTILHADA = bool(data.get("COMPARTILHADA"))
+                    if "ID_OPERADORA" in data:
+                        linha.ID_OPERADORA = data.get("ID_OPERADORA")
                     if "LINH_ATIV_EMPR" in data:
-                        linha.LINH_ATIV_EMPR = bool(data.get("LINH_ATIV_EMPR"))
+                        novo_status = bool(data.get("LINH_ATIV_EMPR"))
+                        if not novo_status:
+                            if not linha.LINH_ATIV_EMPR:
+                                raise ErrUpdateData(
+                                    f"Linha {cod_linh} já se encontra baixada",
+                                    400,
+                                )
+                            linha.LINH_ATIV_EMPR = False
+                            dat_baix = data.get("DAT_BAIX")
+                            if isinstance(dat_baix, str):
+                                try:
+                                    dat_baix = datetime.fromisoformat(dat_baix)
+                                except ValueError:
+                                    dat_baix = datetime.now()
+                            linha.DAT_BAIX = (
+                                dat_baix if dat_baix is not None else datetime.now()
+                            )
+                        else:
+                            linha.LINH_ATIV_EMPR = True
+                            linha.DAT_BAIX = None
+                    elif "DAT_BAIX" in data:
+                        dat_baix = data.get("DAT_BAIX")
+                        if isinstance(dat_baix, str):
+                            try:
+                                dat_baix = datetime.fromisoformat(dat_baix)
+                            except ValueError:
+                                dat_baix = None
+                        linha.DAT_BAIX = dat_baix
                     self.db.merge(linha)
                     counter += 1
         return counter
