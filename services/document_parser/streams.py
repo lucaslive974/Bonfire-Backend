@@ -1,4 +1,6 @@
 import re
+import io
+import unicodedata
 import pandas as pd
 import numpy as np
 from docx import Document
@@ -162,18 +164,67 @@ class RecursosDocxInputStream(InputStream[Any, Dict[str, Any]]):
                 yield recurso_dict
 
 
+class SanitizedTextIO(io.TextIOBase):
+    """
+    Wrapper that intercepts the binary file stream,
+    removes accents and encoding garbage BEFORE pandas attempts to parse it.
+    """
+    def __init__(self, binary_stream):
+        self.binary_stream = binary_stream
+
+    def read(self, size=-1):
+        raw_bytes = self.binary_stream.read(size)
+        if not raw_bytes:
+            return ""
+        
+        # 1. Try UTF-8 or Latin-1, forcing the drop (ignore) of corrupted bytes
+        try:
+            text = raw_bytes.decode('utf-8', errors='ignore')
+        except Exception:
+            text = raw_bytes.decode('latin_1', errors='ignore')
+            
+        # 2. Normalize NFKD (remove accents) and drop any non-ASCII character
+        return unicodedata.normalize('NFKD', text).encode('ascii', 'ignore').decode('ascii')
+
+    def seek(self, offset, whence=0):
+        return self.binary_stream.seek(offset, whence)
+
+
 class InfracoesCsvInputStream(InputStream[Any, pd.DataFrame]):
-    """InputStream para arquivos de infração CSV."""
+    """InputStream for CSV infraction files."""
     def __init__(self):
         self.current_unit_index = 0
         self.total_units = 0
 
+    def _detect_separator(self, source: Any) -> str:
+        """Reads the first bytes of the stream to infer the separator and resets the cursor."""
+        try:
+            first_chunk = source.read(2048)
+            try:
+                text = first_chunk.decode('utf-8', errors='ignore')
+            except Exception:
+                text = first_chunk.decode('latin_1', errors='ignore')
+            
+            sep_counts = {',': text.count(','), ';': text.count(';'), '|': text.count('|')}
+            best_sep = max(sep_counts, key=sep_counts.get)
+            
+            source.seek(0)
+            return best_sep if sep_counts[best_sep] > 0 else ';'
+        except Exception:
+            try:
+                source.seek(0)
+            except Exception:
+                pass
+            return ';'
+
     def read(self, source: Any, session: ExtractionSession | None = None) -> Generator[pd.DataFrame, None, None]:
         try:
-            for chunk in pd.read_csv(source, header=0, encoding="latin_1", delimiter=';', chunksize=1000):
+            best_sep = self._detect_separator(source)
+            clean_source = SanitizedTextIO(source)
+            for chunk in pd.read_csv(clean_source, header=0, delimiter=best_sep, chunksize=1000):
                 yield chunk
         except Exception as e:
-            raise ErrReadingFile(f"Erro ao processar o arquivo CSV. {e}", 500)
+            raise ErrReadingFile(f"Severe failure reading CSV: {str(e)}", 500)
 
 
 class InfracoesXlsInputStream(InputStream[Any, pd.DataFrame]):
