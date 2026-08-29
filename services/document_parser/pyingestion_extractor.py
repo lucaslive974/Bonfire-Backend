@@ -6,6 +6,8 @@ from services.document_parser.core import DocumentExtractor, ExtractionObserver
 from services.document_parser.exceptions import DocumentParsingError
 
 class PyIngestionObserverAdapter(PyIngestionObserver):
+    is_cancelled = False
+
     """Adapts PyIngestion's native observer events to Bonfire's ExtractionObserver"""
     def __init__(self, bonfire_observer: ExtractionObserver):
         self.bonfire_observer = bonfire_observer
@@ -23,9 +25,6 @@ class PyIngestionObserverAdapter(PyIngestionObserver):
     def on_complete(self, *args, **kwargs):
         self.bonfire_observer.on_event("status_change", "completed")
 
-    def is_cancelled(self) -> bool:
-        return False
-        
     def on_file_start(self, *args, **kwargs):
         pass
         
