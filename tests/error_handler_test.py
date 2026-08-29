@@ -37,7 +37,7 @@ def test_custom_exception_handling(error_client):
     data = response.get_json()
     assert data == {
         "error": "TEAPOT_ERROR",
-        "message": "Custom domain error occurred",
+        "message": "Um erro inesperado ocorreu.",
         "status": 418
     }
 

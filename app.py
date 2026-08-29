@@ -37,7 +37,8 @@ class BonfireApp(Flask):
         # Custom domain exception handler
         @self.errorhandler(CustomException)
         def _handle_custom_exception(e: CustomException):  # pyright: ignore [reportUnusedFunction]
-            return jsonify(e.to_json()), e.status
+            logger.systemLog(f"[{e.error}] {e.message}")
+            return jsonify(dict(e)), e.status
 
         # Generic unexpected exception handler
         @self.errorhandler(Exception)

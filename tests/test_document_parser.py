@@ -36,7 +36,7 @@ def test_app():
     
     @app.errorhandler(CustomException)
     def _handle_custom_exception(e):
-        return jsonify(e.to_json()), e.status
+        return jsonify(dict(e)), e.status
 
     if not hasattr(app, 'extensions'):
         app.extensions = {}
