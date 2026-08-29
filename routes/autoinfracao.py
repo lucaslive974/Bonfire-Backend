@@ -18,7 +18,7 @@ def post_csv():
     if not factory:
         raise ErrIncompleteData("ParserFactory not configured", 500)
         
-    extractor = factory.create_infracoes_csv_parser()
+    extractor = factory.create_infracoes_csv_parser(ignore=True)
     observer = ExtractionObserver()
     extractor.extract(file.stream, observer)
     

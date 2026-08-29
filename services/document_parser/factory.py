@@ -27,7 +27,7 @@ class PyIngestionParserFactory(DocumentParserFactory):
             write_stream_factory=lambda: BonfireRecursoWriteStream(first_instance=False)
         )
 
-    def create_infracoes_csv_parser(self) -> DocumentExtractor:
+    def create_infracoes_csv_parser(self, ignore: bool = False) -> DocumentExtractor:
         return PyIngestionDocumentExtractor(
             input_stream_class=InfracoesCsvInputStream,
             transform_stream_class=lambda: InfracoesTransformStream(
@@ -35,7 +35,7 @@ class PyIngestionParserFactory(DocumentParserFactory):
                 date_format="%d/%m/%Y",
                 convert_val_infr=True
             ),
-            write_stream_factory=BonfireInfracaoWriteStream
+            write_stream_factory=lambda: BonfireInfracaoWriteStream(ignore=ignore)
         )
 
     def create_infracoes_xls_parser(self, ignore: bool = False) -> DocumentExtractor:
