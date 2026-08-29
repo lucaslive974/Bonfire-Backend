@@ -16,3 +16,7 @@ sqlalchemy
 pymysql
 alembic
 pyingestion
+
+# Cache
+PyJWT
+cryptography

@@ -13,7 +13,7 @@ from unittest.mock import patch
 
 # Mock database connection check and Keycloak connection check during test imports
 patcher_db = patch("repositories.database.check_database_connection")
-patcher_kc_conn = patch("services.authenticator.KeyCloakAuthenticator.checkConnection")
+patcher_kc_conn = patch("core.auth.authenticator.KeyCloakAuthenticator.checkConnection")
 
 patcher_db.start()
 patcher_kc_conn.start()

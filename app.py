@@ -3,10 +3,11 @@ from flask import Flask, Response, request, jsonify
 
 from routes import autoinfracao, recursos, veiculos, linha, consorcio
 from utils.logger import logger, http_logger
-from services.authenticator import Authenticator, KeyCloakAuthenticator
+from core.auth import Authenticator, KeyCloakAuthenticator
 from repositories.database import check_database_connection
 from exceptions.CustomExceptions import CustomException
 from services.document_parser.factory import PyIngestionParserFactory
+from core.cache import InMemoryCache
 
 
 class BonfireApp(Flask):
@@ -25,8 +26,11 @@ class BonfireApp(Flask):
         self.register_blueprint(linha.linhaBlueprint)
         self.register_blueprint(consorcio.consorcioBlueprint)
 
+        # Initialize Application Cache
+        self.extensions['cache'] = InMemoryCache()
+        
         check_database_connection()
-        self._authController = KeyCloakAuthenticator()
+        self._authController = KeyCloakAuthenticator(cache=self.extensions['cache'])
         self._authController.checkConnection()
 
         # Initialize Document Parser Abstract Factory
