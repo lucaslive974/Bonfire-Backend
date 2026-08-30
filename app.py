@@ -85,3 +85,7 @@ class BonfireApp(Flask):
             return Response("Unauthorized", status=401)
 
         return None
+
+
+def createBonfireApp():
+    return BonfireApp("__main__")
