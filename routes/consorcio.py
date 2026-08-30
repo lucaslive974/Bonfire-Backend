@@ -1,4 +1,5 @@
 from flask import Blueprint, jsonify, request
+
 from services.consorcio_service import ConsorcioService
 from utils.validators import checkKeysInJson
 

@@ -1,10 +1,12 @@
 import os
 import tempfile
+
 import pytest
 from docx import Document
-from services.parsers import normalize_auto_infraction_id
-from services.document_parser.streams import RecursosDocxInputStream
+
 from exceptions.CustomExceptions import ErrDataPubli
+from services.document_parser.streams import RecursosDocxInputStream
+from services.parsers import normalize_auto_infraction_id
 
 
 def test_normalize_auto_infraction_id():

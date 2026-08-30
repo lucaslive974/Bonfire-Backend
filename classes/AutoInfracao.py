@@ -1,5 +1,6 @@
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any
+
 from classes.Mixins import SerializableMixin
 
 

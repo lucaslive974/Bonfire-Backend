@@ -8,8 +8,9 @@ for key, val in [
 ]:
     os.environ.setdefault(key, val)
 
-import pytest
 from unittest.mock import patch
+
+import pytest
 
 # Mock database connection check and Keycloak connection check during test imports
 patcher_db = patch("repositories.database.check_database_connection")

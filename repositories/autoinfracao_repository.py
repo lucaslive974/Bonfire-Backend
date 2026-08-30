@@ -1,6 +1,8 @@
-from typing import List, Tuple, Any, Dict
-from sqlalchemy.orm import Session
+from typing import Any, Dict, List, Tuple
+
 from sqlalchemy import insert
+from sqlalchemy.orm import Session
+
 from classes.AutoInfracao import AutoInfracao
 from repositories.models.autoinfracao_model import AutoInfracaoModel
 

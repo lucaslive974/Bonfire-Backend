@@ -1,7 +1,8 @@
-from typing import List, Dict, Any
+from typing import Any, Dict, List
+
+from exceptions.CustomExceptions import ErrUpdateData
 from repositories.database import get_db
 from repositories.veiculo_repository import VeiculoRepository
-from exceptions.CustomExceptions import ErrUpdateData
 
 
 class VeiculoService:

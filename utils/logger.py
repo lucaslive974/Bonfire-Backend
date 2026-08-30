@@ -1,9 +1,11 @@
+import logging
 import os
 import sys
-import logging
 from datetime import datetime
-from flask import Request
 from typing import Any
+
+from flask import Request
+
 
 # Códigos de Cores ANSI
 class LogColors:

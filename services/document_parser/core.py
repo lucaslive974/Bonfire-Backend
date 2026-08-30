@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import BinaryIO, Optional, Any, Dict
+from typing import Any, BinaryIO, Dict, Optional
+
 
 class ExtractionObserver:
     """Observer to track metrics and events during PyIngestion extraction"""

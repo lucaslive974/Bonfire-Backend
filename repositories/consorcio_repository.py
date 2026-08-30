@@ -1,5 +1,7 @@
-from typing import List, Dict, Any
+from typing import Any, Dict, List
+
 from sqlalchemy.orm import Session
+
 from classes.Operadora import Operadora
 from repositories.models.operadora_model import OperadoraModel
 

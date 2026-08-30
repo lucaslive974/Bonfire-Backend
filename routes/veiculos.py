@@ -1,4 +1,5 @@
 from flask import Blueprint, jsonify, request
+
 from services.veiculo_service import VeiculoService
 from utils.validators import checkKeysInJson
 

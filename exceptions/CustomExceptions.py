@@ -1,4 +1,5 @@
-from typing import Dict, Any
+from typing import Any
+
 
 class CustomException(Exception):
     """Classe básica para as exceções customizadas da aplicação"""

@@ -1,5 +1,6 @@
 from argparse import ArgumentParser, Namespace
 
+
 class Args(Namespace):
     port: int
     debug: bool

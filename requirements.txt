@@ -1,4 +1,3 @@
-
 # API
 flask
 flask-cors
@@ -20,3 +19,6 @@ pyingestion
 # Cache
 PyJWT
 cryptography
+
+#Style
+ruff

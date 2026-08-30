@@ -1,4 +1,5 @@
 from flask import Blueprint, jsonify, request
+
 from services.linha_service import LinhaService
 from utils.validators import checkKeysInJson
 

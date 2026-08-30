@@ -1,7 +1,8 @@
-from typing import List, Dict, Any
-from repositories.database import get_db
-from repositories.consorcio_repository import ConsorcioRepository
+from typing import Any, Dict, List
+
 from exceptions.CustomExceptions import ErrUpdateData
+from repositories.consorcio_repository import ConsorcioRepository
+from repositories.database import get_db
 
 
 class ConsorcioService:

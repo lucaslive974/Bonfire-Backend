@@ -1,12 +1,13 @@
+from typing import Any, Dict, List, Tuple
 from warnings import deprecated
-from typing import List, Tuple, Any, Dict
+
 import pandas as pd
 
-from utils.logger import logger
-from repositories.database import get_db
-from repositories.autoinfracao_repository import AutoInfracaoRepository
 from exceptions.CustomExceptions import ErrReadingFile
+from repositories.autoinfracao_repository import AutoInfracaoRepository
+from repositories.database import get_db
 from services.parsers import parse_csv_infracoes, parse_xls_infracoes
+from utils.logger import logger
 
 
 class AutoInfracaoService:

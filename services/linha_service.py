@@ -1,4 +1,5 @@
-from typing import List, Dict, Any
+from typing import Any, Dict, List
+
 from repositories.database import get_db
 from repositories.linha_repository import LinhaRepository
 

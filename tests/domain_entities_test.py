@@ -1,10 +1,12 @@
+from datetime import datetime
+
 import pytest
-from datetime import datetime, date
-from classes.Linha import Linha
-from classes.Veiculo import Veiculo
-from classes.Operadora import Operadora
+
 from classes.AutoInfracao import AutoInfracao
-from classes.Recurso import RecursoPrimeiraInstancia, RecursoSegundaInstancia
+from classes.Linha import Linha
+from classes.Operadora import Operadora
+from classes.Recurso import RecursoPrimeiraInstancia
+from classes.Veiculo import Veiculo
 from exceptions.CustomExceptions import ErrUpdateData
 
 

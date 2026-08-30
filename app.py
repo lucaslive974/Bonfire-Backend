@@ -1,13 +1,13 @@
+from flask import Flask, Response, jsonify, request
 from flask_cors import CORS
-from flask import Flask, Response, request, jsonify
 
-from routes import autoinfracao, recursos, veiculos, linha, consorcio
-from utils.logger import logger, http_logger
 from core.auth import Authenticator, KeyCloakAuthenticator
-from repositories.database import check_database_connection
-from exceptions.CustomExceptions import CustomException
-from services.document_parser.factory import PyIngestionParserFactory
 from core.cache import InMemoryCache
+from exceptions.CustomExceptions import CustomException
+from repositories.database import check_database_connection
+from routes import autoinfracao, consorcio, linha, recursos, veiculos
+from services.document_parser.factory import PyIngestionParserFactory
+from utils.logger import http_logger, logger
 
 
 class BonfireApp(Flask):

@@ -1,13 +1,15 @@
+
 from flask import Blueprint, jsonify, request
-from tempfile import NamedTemporaryFile
+
 from exceptions.CustomExceptions import ErrIncompleteData
 from services.recurso_service import RecursoService
 
 RecursoPrimeiraInstanciaBlueprint = Blueprint('recursoPrimeiraInstancia', __name__)
 
 from flask import current_app
+
 from services.document_parser.core import ExtractionObserver
-from services.document_parser.exceptions import UnsupportedFormatError, DocumentParsingError
+
 
 @RecursoPrimeiraInstanciaBlueprint.route("/recurso/primeiraInstancia/resultado", methods=["POST"])
 def postResultadoPrimeiraInstancia():

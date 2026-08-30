@@ -1,12 +1,16 @@
 import re
-from typing import Any, List, Dict
-import pandas as pd
+from typing import Any, Dict, List
+
 import numpy as np
+import pandas as pd
 from docx import Document
 
 from classes.Conversores import Conversores
 from exceptions.CustomExceptions import (
-    ErrDataPubli, ErrQuantityOfAtas, ErrIncorrectInstance, ErrReadingFile
+    ErrDataPubli,
+    ErrIncorrectInstance,
+    ErrQuantityOfAtas,
+    ErrReadingFile,
 )
 
 

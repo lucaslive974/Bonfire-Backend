@@ -1,9 +1,9 @@
-from typing import List, Dict, Any
-from datetime import datetime
+from typing import Any, Dict, List
+
 from sqlalchemy.orm import Session
+
 from classes.Veiculo import Veiculo
 from repositories.models.veiculo_model import VeiculoModel
-from exceptions.CustomExceptions import ErrUpdateData
 
 
 class VeiculoRepository:

@@ -1,8 +1,9 @@
-import pytest
-from typing import Any
-from io import BytesIO
-from unittest.mock import patch, MagicMock
 from datetime import date
+from io import BytesIO
+from typing import Any
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 from classes.Recurso import RecursoPrimeiraInstancia, RecursoSegundaInstancia
 from exceptions.CustomExceptions import ErrNullInsert

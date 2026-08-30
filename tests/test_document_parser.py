@@ -1,11 +1,19 @@
-import pytest
 import io
-from flask import Flask, jsonify, request, current_app
 from typing import BinaryIO, Optional
 
-from services.document_parser.core import DocumentExtractor, ExtractionObserver, DocumentParserFactory
-from services.document_parser.exceptions import DocumentParsingError, UnsupportedFormatError
+import pytest
+from flask import Flask, current_app, jsonify, request
+
 from exceptions.CustomExceptions import CustomException
+from services.document_parser.core import (
+    DocumentExtractor,
+    DocumentParserFactory,
+    ExtractionObserver,
+)
+from services.document_parser.exceptions import (
+    DocumentParsingError,
+)
+
 
 class MockExtractor(DocumentExtractor):
     def __init__(self, succeed=True):

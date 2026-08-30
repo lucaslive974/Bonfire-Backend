@@ -1,8 +1,13 @@
-from typing import List, Dict, Any
-from sqlalchemy.orm import Session
+from typing import Any, Dict, List
+
 from sqlalchemy import insert
-from repositories.models.recurso_model import RecursoPrimeiraInstanciaModel, RecursoSegundaInstanciaModel
+from sqlalchemy.orm import Session
+
 from repositories.models.autoinfracao_model import AutoInfracaoModel
+from repositories.models.recurso_model import (
+    RecursoPrimeiraInstanciaModel,
+    RecursoSegundaInstanciaModel,
+)
 
 
 class RecursoRepository:

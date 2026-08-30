@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Any, Optional
 
+
 class ICache(ABC):
     """Generic interface for application-wide caching."""
     

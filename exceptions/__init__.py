@@ -1,9 +1,9 @@
 from exceptions.CustomExceptions import (
     CustomException,
+    ErrCreatingDbConnection,
     ErrDataPubli,
-    ErrNullInsert,
     ErrInvalidDbConfig,
-    ErrCreatingDbConnection
+    ErrNullInsert,
 )
 
 __all__ = [

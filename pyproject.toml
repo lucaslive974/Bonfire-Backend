@@ -21,3 +21,22 @@ reportMissingTypeStubs = "none"
 reportUnknownLambdaType = "none"
 reportUnnecessaryComparison = "none"
 reportUnreachable = "none"
+
+[tool.ruff]
+line-length = 88
+target-version = "py314" 
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+
+ignore = [
+    "ARG",  # Ignora parâmetros de funções não utilizados (equivale ao reportUnusedParameter)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+"tests/**/*.py" = ["S101"] # Permite o uso de 'assert' em arquivos de teste
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"

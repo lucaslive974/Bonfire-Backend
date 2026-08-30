@@ -1,15 +1,19 @@
-import re
 import io
+import re
 import unicodedata
-import pandas as pd
-import numpy as np
-from docx import Document
-from typing import Any, Generator, Dict, List, Optional
+from typing import Any, Dict, Generator, List
 
-from pyingestion import InputStream, TransformStream, OutputStream, ExtractionSession
+import numpy as np
+import pandas as pd
+from docx import Document
+from pyingestion import ExtractionSession, InputStream, OutputStream, TransformStream
+
 from classes.Conversores import Conversores
 from exceptions.CustomExceptions import (
-    ErrDataPubli, ErrQuantityOfAtas, ErrIncorrectInstance, ErrReadingFile
+    ErrDataPubli,
+    ErrIncorrectInstance,
+    ErrQuantityOfAtas,
+    ErrReadingFile,
 )
 from services.parsers import normalize_auto_infraction_id
 from services.recurso_service import RecursoService
@@ -78,8 +82,8 @@ class BonfireInfracaoWriteStream(OutputStream[Any]):
         if not self._buffer:
             return
         
-        from repositories.database import get_db
         from repositories.autoinfracao_repository import AutoInfracaoRepository
+        from repositories.database import get_db
         
         with get_db() as db:
             repo = AutoInfracaoRepository(db)

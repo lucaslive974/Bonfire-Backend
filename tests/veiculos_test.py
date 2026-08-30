@@ -1,10 +1,11 @@
-import pytest
 from datetime import datetime
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 from classes.Veiculo import Veiculo
-from repositories.veiculo_repository import VeiculoRepository
 from exceptions.CustomExceptions import ErrUpdateData
+from repositories.veiculo_repository import VeiculoRepository
 from services.veiculo_service import VeiculoService
 
 

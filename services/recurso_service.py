@@ -1,8 +1,8 @@
-from typing import List, Dict, Any
+from typing import Any, Dict, List
 
+from exceptions.CustomExceptions import ErrNullInsert
 from repositories.database import get_db
 from repositories.recurso_repository import RecursoRepository
-from exceptions.CustomExceptions import ErrNullInsert
 from services.parsers import parse_docx_recursos
 
 

@@ -1,12 +1,14 @@
 from flask import Blueprint, jsonify, request
+
 from exceptions.CustomExceptions import ErrIncompleteData
 from services.autoinfracao_service import AutoInfracaoService
 
 AutoInfracaoBlueprint = Blueprint('infracao', __name__)
 
 from flask import current_app
+
 from services.document_parser.core import ExtractionObserver
-from services.document_parser.exceptions import DocumentParsingError
+
 
 @AutoInfracaoBlueprint.route("/infracao/csv", methods=["POST"])
 def post_csv():

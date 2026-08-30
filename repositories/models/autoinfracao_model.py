@@ -1,4 +1,5 @@
-from sqlalchemy import Column, String, Integer, DateTime, Float
+from sqlalchemy import Column, DateTime, Float, Integer, String
+
 from repositories.models.Base import Base
 
 

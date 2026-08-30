@@ -1,10 +1,11 @@
-import pytest
 from datetime import datetime
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 from classes.Linha import Linha
-from repositories.linha_repository import LinhaRepository
 from exceptions.CustomExceptions import ErrUpdateData
+from repositories.linha_repository import LinhaRepository
 from services.linha_service import LinhaService
 
 

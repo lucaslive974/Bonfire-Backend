@@ -3,7 +3,6 @@ import sys
 import urllib.parse
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
 from alembic import context
@@ -14,7 +13,6 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 # Load the project config and base metadata
 from classes.Config import config as app_config
 from repositories.models.Base import Base
-from repositories.models import AutoInfracaoModel, LinhaModel, OperadoraModel, VeiculoModel, RecursoPrimeiraInstanciaModel, RecursoSegundaInstanciaModel
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

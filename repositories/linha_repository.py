@@ -1,9 +1,9 @@
-from typing import List, Dict, Any
-from datetime import datetime
+from typing import Any, Dict, List
+
 from sqlalchemy.orm import Session
+
 from classes.Linha import Linha
 from repositories.models.linha_model import LinhaModel
-from exceptions.CustomExceptions import ErrUpdateData
 
 
 class LinhaRepository:

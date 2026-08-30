@@ -116,5 +116,6 @@ Config/
 
 # Config
 config/
+.ruff*
 
 pyrightconfig.json

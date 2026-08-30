@@ -1,18 +1,27 @@
-
 # API
 flask
 flask-cors
 waitress
+python-keycloak
 
 # PDF and DOCX manipulation
 pypdf2
 python-docx
 pandas
+openpyxl
 
 # Database
 sqlalchemy
 pymysql
 alembic
+pyingestion
+
+# Cache
+PyJWT
+cryptography
+
+#Style
+ruff
 
 # Testing
 pytest

@@ -1,5 +1,7 @@
-from typing import List, Any
+from typing import Any, List
+
 from exceptions.CustomExceptions import ErrIncompleteData, ErrInvalidJson
+
 
 def checkKeysInJson(jsonObject: List[Any], keys_to_check: List[str], expectedObject: str) -> None:
     """Verifica se os dados necessários estão no JSON."""

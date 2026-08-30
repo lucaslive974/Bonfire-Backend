@@ -1,13 +1,14 @@
-from abc import abstractmethod, ABC
+from abc import ABC, abstractmethod
 from datetime import datetime, timezone
-from typing import override, Any
+from typing import override
 
-import requests
 import jwt
+import requests
 from keycloak import KeycloakOpenID
+
 from classes.Config import config
-from utils.logger import logger
 from core.cache.interface import ICache
+from utils.logger import logger
 
 
 class Authenticator(ABC):

@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import Any, Dict
+
 from classes.Mixins import SerializableMixin
 from exceptions.CustomExceptions import ErrUpdateData
 

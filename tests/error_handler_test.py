@@ -1,7 +1,9 @@
-import pytest
 from unittest.mock import patch
-from app import BonfireApp
+
+import pytest
 from flask import Blueprint
+
+from app import BonfireApp
 from exceptions.CustomExceptions import CustomException
 
 

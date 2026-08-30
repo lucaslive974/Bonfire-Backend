@@ -1,14 +1,15 @@
-from services.document_parser.core import DocumentParserFactory, DocumentExtractor
+from services.document_parser.core import DocumentExtractor, DocumentParserFactory
 from services.document_parser.pyingestion_extractor import PyIngestionDocumentExtractor
 from services.document_parser.streams import (
-    BonfireRecursoWriteStream,
     BonfireInfracaoWriteStream,
-    RecursosDocxInputStream,
+    BonfireRecursoWriteStream,
     InfracoesCsvInputStream,
-    InfracoesXlsInputStream,
     InfracoesTransformStream,
-    NoOpTransformStream
+    InfracoesXlsInputStream,
+    NoOpTransformStream,
+    RecursosDocxInputStream,
 )
+
 
 class PyIngestionParserFactory(DocumentParserFactory):
     """Concrete Abstract Factory that uses PyIngestion to create document extractors."""

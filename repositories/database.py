@@ -1,8 +1,10 @@
-from sqlalchemy import create_engine, text
-from sqlalchemy.orm import sessionmaker, scoped_session
 from contextlib import contextmanager
-from exceptions.CustomExceptions import ErrInvalidDbConfig, ErrCreatingDbConnection
+
+from sqlalchemy import create_engine, text
+from sqlalchemy.orm import scoped_session, sessionmaker
+
 from classes.Config import config
+from exceptions.CustomExceptions import ErrCreatingDbConnection, ErrInvalidDbConfig
 from utils.logger import logger
 
 _engine = None

@@ -1,4 +1,4 @@
-from utils.logger import Logger, HttpLogger, logger, http_logger
+from utils.logger import HttpLogger, Logger, http_logger, logger
 
 
 def test_logger_singleton():

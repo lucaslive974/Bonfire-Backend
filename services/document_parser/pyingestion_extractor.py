@@ -1,9 +1,11 @@
-from typing import BinaryIO, Optional, Callable, Any
-from pyingestion import Gaia, ExtractionSession
+from typing import Any, BinaryIO, Callable, Optional
+
 from pyingestion import ExtractionObserver as PyIngestionObserver
+from pyingestion import ExtractionSession, Gaia
 
 from services.document_parser.core import DocumentExtractor, ExtractionObserver
 from services.document_parser.exceptions import DocumentParsingError
+
 
 class PyIngestionObserverAdapter(PyIngestionObserver):
     is_cancelled = False
