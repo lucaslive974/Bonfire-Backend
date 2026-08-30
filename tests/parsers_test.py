@@ -16,7 +16,7 @@ def test_normalize_auto_infraction_id():
     assert normalize_auto_infraction_id("") == ""
 
 
-def test_parse_docx_recursos():
+def test_recursos_docx_stream():
     # Create a temporary DOCX file with expected structure
     with tempfile.NamedTemporaryFile(suffix=".docx", delete=False) as temp_file:
         doc_path = temp_file.name
@@ -62,7 +62,7 @@ def test_parse_docx_recursos():
             os.remove(doc_path)
 
 
-def test_parse_docx_recursos_missing_date():
+def test_recursos_docx_stream_missing_date():
     with tempfile.NamedTemporaryFile(suffix=".docx", delete=False) as temp_file:
         doc_path = temp_file.name
 

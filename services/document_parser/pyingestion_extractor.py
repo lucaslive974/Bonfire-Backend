@@ -1,45 +1,15 @@
-from typing import Any, BinaryIO, Callable, Optional
+from typing import Any, BinaryIO, Callable
 
-from pyingestion import ExtractionObserver as PyIngestionObserver
 from pyingestion import ExtractionSession, Gaia
+from pyingestion.observer import PipelineEvents
 
-from services.document_parser.core import DocumentExtractor, ExtractionObserver
+from services.document_parser.core import DocumentExtractor
 from services.document_parser.exceptions import DocumentParsingError
-
-
-class PyIngestionObserverAdapter(PyIngestionObserver):
-    is_cancelled = False
-
-    """Adapts PyIngestion's native observer events to Bonfire's ExtractionObserver"""
-
-    def __init__(self, bonfire_observer: ExtractionObserver):
-        self.bonfire_observer = bonfire_observer
-
-    def on_start(self, *args, **kwargs):
-        self.bonfire_observer.on_event("status_change", "started")
-
-    def on_page_processed(self, *args, **kwargs):
-        self.bonfire_observer.on_event("row_processed")
-
-    def on_error(self, error: Exception, *args, **kwargs):
-        self.bonfire_observer.on_event("warning", str(error))
-        self.bonfire_observer.on_event("status_change", "error")
-
-    def on_complete(self, *args, **kwargs):
-        self.bonfire_observer.on_event("status_change", "completed")
-
-    def on_file_start(self, *args, **kwargs):
-        pass
-
-    def on_file_complete(self, *args, **kwargs):
-        pass
-
-    def on_page_start(self, *args, **kwargs):
-        pass
+from utils.logger import logger
 
 
 class PyIngestionDocumentExtractor(DocumentExtractor):
-    """Concrete DocumentExtractor that orchestrates PyIngestion's ETL pipeline."""
+    """Concrete DocumentExtractor that orchestrates PyIngestion's ETL pipeline asynchronously."""
 
     def __init__(
         self,
@@ -52,30 +22,31 @@ class PyIngestionDocumentExtractor(DocumentExtractor):
         self.write_stream_factory = write_stream_factory
 
     def clone(self) -> "PyIngestionDocumentExtractor":
-        """Returns a fresh instance of the configured extractor"""
         return PyIngestionDocumentExtractor(
             input_stream_class=self.input_stream_class,
             transform_stream_class=self.transform_stream_class,
             write_stream_factory=self.write_stream_factory,
         )
 
-    def extract(
-        self, file_stream: BinaryIO, observer: Optional[ExtractionObserver] = None
-    ) -> None:
+    def extract(self, file_stream: BinaryIO) -> dict:
+        self.metrics = {"rows_processed": 0}
+        self._run_extraction_pipeline(file_stream)
+        return self.metrics
+
+    def _run_extraction_pipeline(self, file_stream: BinaryIO) -> None:
         try:
-            # 1. Instantiate the stream components
             input_stream = self.input_stream_class()
             transform_stream = self.transform_stream_class()
             output_stream = self.write_stream_factory()
 
-            # 2. Setup the Observer and Session
-            pyingestion_observer = None
-            if observer:
-                pyingestion_observer = PyIngestionObserverAdapter(observer)
+            session = ExtractionSession()
 
-            session = ExtractionSession(observer=pyingestion_observer)
+            # Register Pub/Sub listeners
+            session.bus.on(PipelineEvents.EXTRACTION_STARTED, self._on_start)
+            session.bus.on(PipelineEvents.PAGE_PROCESSED, self._on_page_processed)
+            session.bus.on(PipelineEvents.EXTRACTION_ERROR, self._on_error)
+            session.bus.on(PipelineEvents.EXTRACTION_COMPLETED, self._on_complete)
 
-            # 3. Execute the pipeline using Gaia
             gaia = Gaia()
             success = gaia.process(
                 source=file_stream,
@@ -85,9 +56,13 @@ class PyIngestionDocumentExtractor(DocumentExtractor):
                 session=session,
             )
 
-            # 4. Flush any remaining items in custom output streams
             if hasattr(output_stream, "flush") and callable(output_stream.flush):
                 output_stream.flush()
+
+            if hasattr(output_stream, "processor") and hasattr(
+                output_stream.processor, "inserted_count"
+            ):
+                self.metrics["rows_processed"] = output_stream.processor.inserted_count
 
             if not success:
                 raise DocumentParsingError("Extraction pipeline failed or was aborted.")
@@ -96,3 +71,31 @@ class PyIngestionDocumentExtractor(DocumentExtractor):
             if isinstance(e, DocumentParsingError):
                 raise
             raise DocumentParsingError(f"PyIngestion pipeline failed: {str(e)}")
+
+    def _on_start(self, session, total_files: int, **kwargs):
+        logger.info(
+            f"PyIngestion Event: EXTRACTION_STARTED - Total files: {total_files}"
+        )
+
+    def _on_page_processed(
+        self,
+        session,
+        success: bool,
+        extracted_pages: int,
+        error_pages: int,
+        page_index: int,
+        total_pages: int,
+        **kwargs,
+    ):
+        if not success:
+            logger.warning(
+                f"PyIngestion Event: PAGE_PROCESSED - Page {page_index}/{total_pages} processing failed."
+            )
+
+    def _on_error(self, session, error_message: str, **kwargs):
+        logger.error(f"PyIngestion Event: EXTRACTION_ERROR - {error_message}")
+
+    def _on_complete(self, session, successful_pages: int, total_pages: int, **kwargs):
+        logger.info(
+            f"PyIngestion Event: EXTRACTION_COMPLETED - Extracted {successful_pages}/{total_pages} pages successfully."
+        )

@@ -15,6 +15,7 @@ from exceptions.CustomExceptions import (
     ErrQuantityOfAtas,
     ErrReadingFile,
 )
+from services.document_parser.pubsub import AsyncMessageProcessor
 from services.parsers import normalize_auto_infraction_id
 from services.recurso_service import RecursoService
 
@@ -24,75 +25,57 @@ from services.recurso_service import RecursoService
 
 
 class BonfireRecursoWriteStream(OutputStream[Any]):
-    """
-    A PyIngestion Write Stream that accumulates parsed resource chunks
-    and flushes them into the Bonfire database incrementally.
-    """
-
     def __init__(self, first_instance: bool = True, batch_size: int = 100):
         self.first_instance = first_instance
-        self.batch_size = batch_size
-        self._buffer: List[Any] = []
+        self.processor = AsyncMessageProcessor(
+            self._process_batch, batch_size=batch_size
+        )
+        self.processor.start()
         super().__init__()
 
     def write(self, item: Any) -> None:
-        """Called by PyIngestion pipeline for every item processed."""
         if isinstance(item, list):
-            self._buffer.extend(item)
+            for i in item:
+                self.processor.publish(i)
         else:
-            self._buffer.append(item)
+            self.processor.publish(item)
 
-        if len(self._buffer) >= self.batch_size:
-            self.flush()
+    def _process_batch(self, batch: List[Any]) -> None:
+        if self.first_instance:
+            RecursoService.insert_primeira_instancia(batch)
+        else:
+            RecursoService.insert_segunda_instancia(batch)
 
     def flush(self) -> None:
-        """Flushes the remaining items in the buffer to the database."""
-        if not self._buffer:
-            return
-
-        if self.first_instance:
-            RecursoService.insert_primeira_instancia(self._buffer)
-        else:
-            RecursoService.insert_segunda_instancia(self._buffer)
-
-        self._buffer.clear()
+        self.processor.stop()
 
 
 class BonfireInfracaoWriteStream(OutputStream[Any]):
-    """
-    A PyIngestion Write Stream that accumulates parsed auto infração chunks
-    and flushes them into the Bonfire database incrementally.
-    """
-
     def __init__(self, ignore: bool = False, batch_size: int = 1000):
         self.ignore = ignore
-        self.batch_size = batch_size
-        self._buffer: List[Any] = []
+        self.processor = AsyncMessageProcessor(
+            self._process_batch, batch_size=batch_size
+        )
+        self.processor.start()
         super().__init__()
 
     def write(self, item: Any) -> None:
-        """Called by PyIngestion pipeline for every item processed."""
         if isinstance(item, list):
-            self._buffer.extend(item)
+            for i in item:
+                self.processor.publish(i)
         else:
-            self._buffer.append(item)
+            self.processor.publish(item)
 
-        if len(self._buffer) >= self.batch_size:
-            self.flush()
-
-    def flush(self) -> None:
-        """Flushes the remaining items in the buffer to the database."""
-        if not self._buffer:
-            return
-
+    def _process_batch(self, batch: List[Any]) -> None:
         from repositories.autoinfracao_repository import AutoInfracaoRepository
         from repositories.database import get_db
 
         with get_db() as db:
             repo = AutoInfracaoRepository(db)
-            repo.insert_bulk_rows(self._buffer, ignore=self.ignore)
+            repo.insert_bulk_rows(batch, ignore=self.ignore)
 
-        self._buffer.clear()
+    def flush(self) -> None:
+        self.processor.stop()
 
 
 # ==========================================
@@ -179,7 +162,7 @@ class RecursosDocxInputStream(InputStream[Any, Dict[str, Any]]):
 
                 if session:
                     # Simular processamento de "página/item"
-                    session.on_page_processed(1, 1)
+                    session.process_page_result(True, 1, 1)
 
                 yield recurso_dict
 
