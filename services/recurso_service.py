@@ -3,7 +3,6 @@ from typing import Any, Dict, List
 from exceptions.CustomExceptions import ErrNullInsert
 from repositories.database import get_db
 from repositories.recurso_repository import RecursoRepository
-from services.parsers import parse_docx_recursos
 
 
 class RecursoService:
@@ -22,11 +21,6 @@ class RecursoService:
         with get_db() as db:
             repo = RecursoRepository(db)
             return repo.get_segunda_instancia(date)
-
-    @staticmethod
-    def parse_docx(docx: Any, first_instance: bool = True) -> List[Dict[str, Any]]:
-        """Realiza o parse do documento DOCX delegando para o parser service."""
-        return parse_docx_recursos(docx, first_instance)
 
     @staticmethod
     def insert_primeira_instancia(
