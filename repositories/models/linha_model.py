@@ -5,10 +5,10 @@ from repositories.models.Base import Base
 
 
 class LinhaModel(Base):
-    __tablename__ = 'linha'
+    __tablename__ = "linha"
 
     COD_LINH = Column(String(10), primary_key=True)
-    ID_OPERADORA = Column(Integer, ForeignKey('operadora.ID'), nullable=True)
+    ID_OPERADORA = Column(Integer, ForeignKey("operadora.ID"), nullable=True)
     COMPARTILHADA = Column(Boolean, nullable=False, default=False)
     LINH_ATIV_EMPR = Column(Boolean, nullable=False, default=True)
     DAT_BAIX = Column(DateTime, nullable=True)

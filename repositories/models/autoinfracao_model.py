@@ -4,7 +4,7 @@ from repositories.models.Base import Base
 
 
 class AutoInfracaoModel(Base):
-    __tablename__ = 'auto_infracao'
+    __tablename__ = "auto_infracao"
 
     NUM_AI = Column(String(10), primary_key=True)
     NUM_NOTF = Column(String(10), unique=True, nullable=True)

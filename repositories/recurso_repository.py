@@ -21,8 +21,11 @@ class RecursoRepository:
             RecursoPrimeiraInstanciaModel.DAT_PUBL,
             AutoInfracaoModel.COD_LINH,
             AutoInfracaoModel.NUM_VEIC,
-            AutoInfracaoModel.IDN_PLAC_VEIC
-        ).join(AutoInfracaoModel, RecursoPrimeiraInstanciaModel.NUM_AI == AutoInfracaoModel.NUM_AI)
+            AutoInfracaoModel.IDN_PLAC_VEIC,
+        ).join(
+            AutoInfracaoModel,
+            RecursoPrimeiraInstanciaModel.NUM_AI == AutoInfracaoModel.NUM_AI,
+        )
 
         if ata is not None:
             query = query.filter(RecursoPrimeiraInstanciaModel.NUM_ATA == ata)
@@ -37,7 +40,7 @@ class RecursoRepository:
                 "DAT_PUBL": r.DAT_PUBL.strftime("%Y-%m-%d") if r.DAT_PUBL else None,
                 "COD_LINH": r.COD_LINH,
                 "NUM_VEIC": r.NUM_VEIC,
-                "IDN_PLAC_VEIC": r.IDN_PLAC_VEIC
+                "IDN_PLAC_VEIC": r.IDN_PLAC_VEIC,
             }
             for r in results
         ]
@@ -48,8 +51,11 @@ class RecursoRepository:
             RecursoSegundaInstanciaModel.DAT_PUBL,
             AutoInfracaoModel.COD_LINH,
             AutoInfracaoModel.NUM_VEIC,
-            AutoInfracaoModel.IDN_PLAC_VEIC
-        ).join(AutoInfracaoModel, RecursoSegundaInstanciaModel.NUM_AI == AutoInfracaoModel.NUM_AI)
+            AutoInfracaoModel.IDN_PLAC_VEIC,
+        ).join(
+            AutoInfracaoModel,
+            RecursoSegundaInstanciaModel.NUM_AI == AutoInfracaoModel.NUM_AI,
+        )
 
         if date is not None:
             query = query.filter(RecursoSegundaInstanciaModel.DAT_PUBL == date)
@@ -61,7 +67,7 @@ class RecursoRepository:
                 "DAT_PUBL": r.DAT_PUBL.strftime("%Y-%m-%d") if r.DAT_PUBL else None,
                 "COD_LINH": r.COD_LINH,
                 "NUM_VEIC": r.NUM_VEIC,
-                "IDN_PLAC_VEIC": r.IDN_PLAC_VEIC
+                "IDN_PLAC_VEIC": r.IDN_PLAC_VEIC,
             }
             for r in results
         ]
@@ -69,7 +75,9 @@ class RecursoRepository:
     def insert_primeira_instancia(self, rows: List[Dict[str, Any]]) -> int:
         counter = 0
         for row in rows:
-            stmt = insert(RecursoPrimeiraInstanciaModel).values(row).prefix_with("IGNORE")
+            stmt = (
+                insert(RecursoPrimeiraInstanciaModel).values(row).prefix_with("IGNORE")
+            )
             result: Any = self.db.execute(stmt)
             rowcount = getattr(result, "rowcount", 0)
             if rowcount > 0:
@@ -79,7 +87,9 @@ class RecursoRepository:
     def insert_segunda_instancia(self, rows: List[Dict[str, Any]]) -> int:
         counter = 0
         for row in rows:
-            stmt = insert(RecursoSegundaInstanciaModel).values(row).prefix_with("IGNORE")
+            stmt = (
+                insert(RecursoSegundaInstanciaModel).values(row).prefix_with("IGNORE")
+            )
             result: Any = self.db.execute(stmt)
             rowcount = getattr(result, "rowcount", 0)
             if rowcount > 0:

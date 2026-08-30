@@ -4,7 +4,7 @@ from repositories.models.Base import Base
 
 
 class RecursoPrimeiraInstanciaModel(Base):
-    __tablename__ = 'recurso_primeira_instancia'
+    __tablename__ = "recurso_primeira_instancia"
 
     ID = Column(Integer, primary_key=True, autoincrement=True)
     NUM_AI = Column(String(15), unique=True, nullable=True)
@@ -20,7 +20,7 @@ class RecursoPrimeiraInstanciaModel(Base):
 
 
 class RecursoSegundaInstanciaModel(Base):
-    __tablename__ = 'recurso_segunda_instancia'
+    __tablename__ = "recurso_segunda_instancia"
 
     ID = Column(Integer, primary_key=True, autoincrement=True)
     NUM_AI = Column(String(15), unique=True, nullable=True)

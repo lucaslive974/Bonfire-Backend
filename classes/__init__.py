@@ -8,13 +8,13 @@ from classes.Veiculo import Veiculo
 from repositories.models.Base import Base
 
 __all__ = [
-    'Base',
-    'AutoInfracao',
-    'Conversores',
-    'Linha',
-    'Operadora',
-    'Veiculo',
-    'RecursoPrimeiraInstancia',
-    'RecursoSegundaInstancia',
-    'SerializableMixin',
+    "Base",
+    "AutoInfracao",
+    "Conversores",
+    "Linha",
+    "Operadora",
+    "Veiculo",
+    "RecursoPrimeiraInstancia",
+    "RecursoSegundaInstancia",
+    "SerializableMixin",
 ]

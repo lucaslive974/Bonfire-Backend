@@ -6,11 +6,11 @@ from repositories.recurso_repository import RecursoRepository
 from repositories.veiculo_repository import VeiculoRepository
 
 __all__ = [
-    'get_db',
-    'check_database_connection',
-    'VeiculoRepository',
-    'LinhaRepository',
-    'ConsorcioRepository',
-    'AutoInfracaoRepository',
-    'RecursoRepository'
+    "get_db",
+    "check_database_connection",
+    "VeiculoRepository",
+    "LinhaRepository",
+    "ConsorcioRepository",
+    "AutoInfracaoRepository",
+    "RecursoRepository",
 ]

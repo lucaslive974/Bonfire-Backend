@@ -35,7 +35,9 @@ class LinhaRepository:
         return [self._to_domain(m) for m in models if m is not None]
 
     def get_by_id(self, cod_linh: str) -> Linha | None:
-        model = self.db.query(LinhaModel).filter(LinhaModel.COD_LINH == cod_linh).first()
+        model = (
+            self.db.query(LinhaModel).filter(LinhaModel.COD_LINH == cod_linh).first()
+        )
         return self._to_domain(model)
 
     def insert_bulk(self, linhas_data: List[Dict[str, Any]]) -> int:
@@ -60,7 +62,11 @@ class LinhaRepository:
         for data in linhas_data:
             cod_linh = data.get("COD_LINH")
             if isinstance(cod_linh, str):
-                model = self.db.query(LinhaModel).filter(LinhaModel.COD_LINH == cod_linh).first()
+                model = (
+                    self.db.query(LinhaModel)
+                    .filter(LinhaModel.COD_LINH == cod_linh)
+                    .first()
+                )
                 if model:
                     linha = self._to_domain(model)
                     if linha:
@@ -74,5 +80,7 @@ class LinhaRepository:
         return counter
 
     def delete(self, cod_linh: str) -> int:
-        deleted = self.db.query(LinhaModel).filter(LinhaModel.COD_LINH == cod_linh).delete()
+        deleted = (
+            self.db.query(LinhaModel).filter(LinhaModel.COD_LINH == cod_linh).delete()
+        )
         return deleted

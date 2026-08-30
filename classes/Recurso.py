@@ -34,7 +34,11 @@ class RecursoPrimeiraInstancia(SerializableMixin):
     def _parse_date(value: date | datetime | str | None) -> date | None:
         if isinstance(value, str):
             try:
-                return datetime.fromisoformat(value).date() if "T" in value or " " in value else date.fromisoformat(value)
+                return (
+                    datetime.fromisoformat(value).date()
+                    if "T" in value or " " in value
+                    else date.fromisoformat(value)
+                )
             except ValueError:
                 return None
         if isinstance(value, datetime):
@@ -70,7 +74,11 @@ class RecursoSegundaInstancia(SerializableMixin):
     def _parse_date(value: date | datetime | str | None) -> date | None:
         if isinstance(value, str):
             try:
-                return datetime.fromisoformat(value).date() if "T" in value or " " in value else date.fromisoformat(value)
+                return (
+                    datetime.fromisoformat(value).date()
+                    if "T" in value or " " in value
+                    else date.fromisoformat(value)
+                )
             except ValueError:
                 return None
         if isinstance(value, datetime):

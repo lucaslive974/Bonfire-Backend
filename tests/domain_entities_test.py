@@ -11,7 +11,9 @@ from exceptions.CustomExceptions import ErrUpdateData
 
 
 def test_linha_domain_methods():
-    linha = Linha(COD_LINH="61", ID_OPERADORA=107, COMPARTILHADA=False, LINH_ATIV_EMPR=True)
+    linha = Linha(
+        COD_LINH="61", ID_OPERADORA=107, COMPARTILHADA=False, LINH_ATIV_EMPR=True
+    )
     assert linha.esta_ativa() is True
     assert linha.COD_LINH == "61"
 
@@ -75,13 +77,17 @@ def test_operadora_domain_methods():
 
 
 def test_autoinfracao_and_recurso_serialization():
-    ai = AutoInfracao(NUM_AI="12345-A", VAL_INFR=150.50, DAT_EMIS_NOTF="2026-08-28T10:00:00")
+    ai = AutoInfracao(
+        NUM_AI="12345-A", VAL_INFR=150.50, DAT_EMIS_NOTF="2026-08-28T10:00:00"
+    )
     ai_dict = dict(ai)
     assert ai_dict["NUM_AI"] == "12345-A"
     assert ai_dict["VAL_INFR"] == 150.50
     assert ai_dict["DAT_EMIS_NOTF"] == "2026-08-28T10:00:00"
 
-    rec1 = RecursoPrimeiraInstancia(NUM_AI="12345-A", NUM_ATA=5, RESULTADO=True, DAT_PUBL="2026-08-28")
+    rec1 = RecursoPrimeiraInstancia(
+        NUM_AI="12345-A", NUM_ATA=5, RESULTADO=True, DAT_PUBL="2026-08-28"
+    )
     rec1_dict = dict(rec1)
     assert rec1_dict["NUM_AI"] == "12345-A"
     assert rec1_dict["NUM_ATA"] == 5

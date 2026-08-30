@@ -36,20 +36,30 @@ class AutoInfracaoRepository:
         return [self._to_domain(m) for m in models if m is not None]
 
     def check_presence(self, values: List[str]) -> Tuple[int, int, List[str]]:
-        existing = self.db.query(AutoInfracaoModel.NUM_AI).filter(AutoInfracaoModel.NUM_AI.in_(values)).all()
+        existing = (
+            self.db.query(AutoInfracaoModel.NUM_AI)
+            .filter(AutoInfracaoModel.NUM_AI.in_(values))
+            .all()
+        )
         existing_set = {r[0] for r in existing}
-        
+
         rows_counter = len(existing_set)
         counter = len(values)
         rows_not_present = [v for v in values if v not in existing_set]
-        
+
         return rows_counter, counter, rows_not_present
 
     def insert_bulk_df(self, data_frame: Any, insert_ignore_func: Any = None) -> int:
         if insert_ignore_func is None:
             insert_ignore_func = insert_ignore_mysql
         conn = self.db.connection()
-        count = data_frame.to_sql('auto_infracao', conn, if_exists='append', index=False, method=insert_ignore_func)
+        count = data_frame.to_sql(
+            "auto_infracao",
+            conn,
+            if_exists="append",
+            index=False,
+            method=insert_ignore_func,
+        )
         return count
 
     def insert_bulk_rows(self, rows: List[Dict[str, Any]], ignore: bool = False) -> int:

@@ -20,7 +20,9 @@ config = context.config
 
 # Dynamically construct database connection URL from project config
 user = app_config.DB_USER
-password = urllib.parse.quote_plus(app_config.DB_PASSWORD) if app_config.DB_PASSWORD else ""
+password = (
+    urllib.parse.quote_plus(app_config.DB_PASSWORD) if app_config.DB_PASSWORD else ""
+)
 host = app_config.DB_HOST
 port = app_config.DB_PORT
 database = app_config.DB_NAME
@@ -67,6 +69,7 @@ def run_migrations_online() -> None:
 
     """
     from sqlalchemy import create_engine
+
     connectable = create_engine(
         db_url,
         poolclass=pool.NullPool,

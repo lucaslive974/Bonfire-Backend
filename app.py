@@ -12,7 +12,7 @@ from utils.logger import http_logger, logger
 
 class BonfireApp(Flask):
     _authController: Authenticator
-    
+
     def __init__(self, name: str) -> None:
         logger.info("::Initializing bonfire application::")
         super().__init__(name)
@@ -22,21 +22,21 @@ class BonfireApp(Flask):
         self.register_blueprint(autoinfracao.AutoInfracaoBlueprint)
         self.register_blueprint(recursos.RecursoPrimeiraInstanciaBlueprint)
         self.register_blueprint(recursos.RecuroSegundaInstanciaBlueprint)
-        self.register_blueprint(veiculos.veiculoBlueprint) 
+        self.register_blueprint(veiculos.veiculoBlueprint)
         self.register_blueprint(linha.linhaBlueprint)
         self.register_blueprint(consorcio.consorcioBlueprint)
 
         # Initialize Application Cache
-        self.extensions['cache'] = InMemoryCache()
-        
+        self.extensions["cache"] = InMemoryCache()
+
         check_database_connection()
-        self._authController = KeyCloakAuthenticator(cache=self.extensions['cache'])
+        self._authController = KeyCloakAuthenticator(cache=self.extensions["cache"])
         self._authController.checkConnection()
 
         # Initialize Document Parser Abstract Factory
-        if not hasattr(self, 'extensions'):
+        if not hasattr(self, "extensions"):
             self.extensions = {}
-        self.extensions['parser_factory'] = PyIngestionParserFactory()
+        self.extensions["parser_factory"] = PyIngestionParserFactory()
 
         # Custom domain exception handler
         @self.errorhandler(CustomException)
@@ -49,10 +49,12 @@ class BonfireApp(Flask):
         def _handle_generic_exception(e: Exception):  # pyright: ignore [reportUnusedFunction]
             logger.systemLog(e)
             status_code = getattr(e, "code", 500)
-            return jsonify({
-                "error": "Internal Server Error",
-                "message": "Ocorreu um erro interno no servidor."
-            }), status_code
+            return jsonify(
+                {
+                    "error": "Internal Server Error",
+                    "message": "Ocorreu um erro interno no servidor.",
+                }
+            ), status_code
 
         @self.before_request
         def _():
@@ -60,12 +62,11 @@ class BonfireApp(Flask):
 
         @self.after_request
         def _(response: Response):
-            return self.logRequest(response) 
-
+            return self.logRequest(response)
 
     def logRequest(self, response: Response):
         http_logger.request(request, response.status_code)
-        return response    
+        return response
 
     def checkAuth(self) -> Response | None:
         if request.method == "OPTIONS":

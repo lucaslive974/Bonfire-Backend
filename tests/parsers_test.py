@@ -24,10 +24,12 @@ def test_parse_docx_recursos():
     try:
         doc = Document()
         # Add publication date paragraph
-        doc.add_paragraph("PUBLICADO NO DIARIO OFICIAL DO MUNICIPIO DE BELO HORIZONTE EM 15/05/2026")
+        doc.add_paragraph(
+            "PUBLICADO NO DIARIO OFICIAL DO MUNICIPIO DE BELO HORIZONTE EM 15/05/2026"
+        )
         # Add Session/Ata header paragraph
         doc.add_paragraph("ATA DA 5ª SESSÃO ORDINÁRIA")
-        
+
         # Add table
         table = doc.add_table(rows=2, cols=4)
         # Row 0: Headers
@@ -40,7 +42,7 @@ def test_parse_docx_recursos():
         table.cell(1, 1).text = "345678A"
         table.cell(1, 2).text = "Consórcio BH Leste"
         table.cell(1, 3).text = "IMPROCEDENTE"
-        
+
         doc.save(doc_path)
 
         # Parse the docx using the new InputStream

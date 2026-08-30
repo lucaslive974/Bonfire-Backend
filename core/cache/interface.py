@@ -4,7 +4,7 @@ from typing import Any, Optional
 
 class ICache(ABC):
     """Generic interface for application-wide caching."""
-    
+
     @abstractmethod
     def get(self, key: str) -> Optional[Any]:
         """Retrieve a value from the cache by its key. Returns None if not found or expired."""

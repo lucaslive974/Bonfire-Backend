@@ -19,8 +19,10 @@ class LogColors:
     CYAN = "\033[36m"
     WHITE = "\033[37m"
 
+
 class ColoredFormatter(logging.Formatter):
     """Formatador customizado para colorizar logs no console de acordo com o nível."""
+
     LEVEL_COLORS = {
         logging.DEBUG: LogColors.CYAN,
         logging.INFO: LogColors.BLUE,
@@ -33,18 +35,19 @@ class ColoredFormatter(logging.Formatter):
         color = self.LEVEL_COLORS.get(record.levelno, LogColors.RESET)
         level_name = f"[{record.levelname}]"
         record.levelname = f"{color}{LogColors.BOLD}{level_name:<9}{LogColors.RESET}"
-        
+
         # Colorir mensagens de inicialização delimitadas por "::"
         message = record.getMessage()
         if message.startswith("::") and message.endswith("::"):
             message = f"{LogColors.CYAN}{message}{LogColors.RESET}"
         record.msg = message
-        
+
         return super().format(record)
 
 
 class Logger:
     """Gerenciador central de logs unificados para o Bonfire implementado como Singleton."""
+
     _instance = None
     _initialized = False
 
@@ -57,11 +60,11 @@ class Logger:
         if self._initialized:
             return
         self.bonfire_log_path = "log"
-        
+
         # Setup do console logger nativo
         self._console_logger = logging.getLogger("bonfire_console")
         self._console_logger.setLevel(logging.DEBUG)
-        
+
         # Evita handlers duplicados ao reinicializar
         if not self._console_logger.handlers:
             handler = logging.StreamHandler(sys.stdout)
@@ -87,12 +90,14 @@ class Logger:
             date_str = datetime.now().strftime("%d-%m-%Y")
             file_path = f"{self.bonfire_log_path}/bonfire-{file_type}-{date_str}.log"
             time_str = datetime.now().strftime("%H:%M:%S")
-            
+
             with open(file_path, "a", encoding="utf-8") as f:
                 f.write(f"{time_str} - {message}\n")
         except Exception as e:
             # Fallback para o console se a gravação em disco falhar
-            self._console_logger.warning(f"Erro ao salvar arquivo de log '{file_type}': {e}")
+            self._console_logger.warning(
+                f"Erro ao salvar arquivo de log '{file_type}': {e}"
+            )
 
     def systemLog(self, msg: str | Exception) -> None:
         self.write_to_file(msg, "system")
@@ -103,6 +108,7 @@ class Logger:
 
 class HttpLogger(Logger):
     """Logger especializado em requisições HTTP implementado como Singleton."""
+
     _instance = None
     _initialized = False
 

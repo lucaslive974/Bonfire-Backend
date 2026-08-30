@@ -2,9 +2,8 @@ from datetime import datetime
 
 
 class Conversores:
-
     @staticmethod
-    def converte_data(data: str, hora: str = '00:00') -> str:
+    def converte_data(data: str, hora: str = "00:00") -> str:
         """Converte string de data e hora em formato datetime"""
         data_hora = f"{data} {hora}"
         data_formato = "%d/%m/%Y %H:%M"
@@ -26,7 +25,7 @@ class Conversores:
     @staticmethod
     def remove_newline(string: str) -> str:
         return string.replace("\n", "")
-    
+
     @staticmethod
     def remove_espaco(string: str) -> str:
         return string.replace(" ", "")

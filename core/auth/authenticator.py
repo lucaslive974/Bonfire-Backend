@@ -29,35 +29,35 @@ class KeyCloakAuthenticator(Authenticator):
     def __init__(self, cache: ICache):
         logger.info("::Configuring Keycloak Local Validator::")
         self.cache = cache
-        
+
         self.keycloakOpenId = KeycloakOpenID(
             f"{config.KEYCLOAK_ISSUER}/auth",
             config.KEYCLOAK_REALM_NAME or "",
             config.KEYCLOAK_CLIENT_ID,
             config.KEYCLOAK_CLIENT_SECRET,
         )
-        
+
         # O endpoint padrão do Keycloak para JWKS (Chaves Públicas)
         realm = config.KEYCLOAK_REALM_NAME or ""
         issuer = config.KEYCLOAK_ISSUER or ""
         self.certs_url = f"{issuer}/realms/{realm}/protocol/openid-connect/certs"
-        
+
         logger.info("::Keycloak authenticator initialized::")
 
     def _get_public_keys(self) -> dict:
         """Fetch JWKS from our application Cache or Keycloak."""
         cache_key = "keycloak_jwks"
         keys = self.cache.get(cache_key)
-        
+
         if keys is not None:
             return keys
-            
+
         try:
             logger.info("::Fetching JWKS from Keycloak (Cache Miss)::")
             response = requests.get(self.certs_url, timeout=10)
             response.raise_for_status()
             keys = response.json()
-            
+
             # Cache the JSON Web Key Set for 24 hours
             self.cache.set(cache_key, keys, ttl_seconds=86400)
             return keys
@@ -80,7 +80,7 @@ class KeyCloakAuthenticator(Authenticator):
                 return False
 
             jwks = self._get_public_keys()
-            
+
             # 3. Find the specific public key used for this token
             public_key = None
             for jwk_data in jwks.get("keys", []):
@@ -95,13 +95,13 @@ class KeyCloakAuthenticator(Authenticator):
 
             # 4. Verify signature and expiration locally
             jwt.decode(
-                token, 
-                key=public_key, 
-                algorithms=["RS256"], 
-                options={"verify_aud": False} 
+                token,
+                key=public_key,
+                algorithms=["RS256"],
+                options={"verify_aud": False},
             )
             return True
-            
+
         except jwt.ExpiredSignatureError:
             logger.warn("Token expired locally (401)")
             return False

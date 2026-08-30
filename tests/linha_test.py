@@ -19,11 +19,11 @@ def test_linha_model_without_dat_baix():
     )
     data = linha.to_dict()
     assert data == {
-        'COD_LINH': "61",
-        'ID_OPERADORA': 107,
-        'COMPARTILHADA': True,
-        'LINH_ATIV_EMPR': True,
-        'DAT_BAIX': None,
+        "COD_LINH": "61",
+        "ID_OPERADORA": 107,
+        "COMPARTILHADA": True,
+        "LINH_ATIV_EMPR": True,
+        "DAT_BAIX": None,
     }
 
 
@@ -38,11 +38,11 @@ def test_linha_model_with_dat_baix():
     )
     data = linha.to_dict()
     assert data == {
-        'COD_LINH': "62",
-        'ID_OPERADORA': 108,
-        'COMPARTILHADA': False,
-        'LINH_ATIV_EMPR': False,
-        'DAT_BAIX': "2026-08-28T10:00:00",
+        "COD_LINH": "62",
+        "ID_OPERADORA": 108,
+        "COMPARTILHADA": False,
+        "LINH_ATIV_EMPR": False,
+        "DAT_BAIX": "2026-08-28T10:00:00",
     }
 
 
@@ -85,9 +85,7 @@ def test_linha_repository_update_bulk_deactivate():
     mock_model = repo._to_model(existing_linha)
     mock_db.query.return_value.filter.return_value.first.return_value = mock_model
 
-    payload = [
-        {"COD_LINH": "61", "LINH_ATIV_EMPR": False}
-    ]
+    payload = [{"COD_LINH": "61", "LINH_ATIV_EMPR": False}]
 
     count = repo.update_bulk(payload)
     assert count == 1
@@ -110,9 +108,7 @@ def test_linha_repository_update_bulk_already_deactivated_raises_error():
     mock_model = repo._to_model(existing_linha)
     mock_db.query.return_value.filter.return_value.first.return_value = mock_model
 
-    payload = [
-        {"COD_LINH": "61", "LINH_ATIV_EMPR": False}
-    ]
+    payload = [{"COD_LINH": "61", "LINH_ATIV_EMPR": False}]
 
     with pytest.raises(ErrUpdateData) as exc_info:
         repo.update_bulk(payload)
@@ -134,9 +130,7 @@ def test_linha_repository_update_bulk_reactivate():
     mock_model = repo._to_model(existing_linha)
     mock_db.query.return_value.filter.return_value.first.return_value = mock_model
 
-    payload = [
-        {"COD_LINH": "61", "LINH_ATIV_EMPR": True}
-    ]
+    payload = [{"COD_LINH": "61", "LINH_ATIV_EMPR": True}]
 
     count = repo.update_bulk(payload)
     assert count == 1
@@ -172,7 +166,15 @@ class TestLinha:
     @patch("routes.linha.LinhaService.get_linha")
     def test_get_route(self, mock_get, client, database):
         """Testa se a rota GET /linha retorna a lista correta de linhas"""
-        mock_get.return_value = [{"COD_LINH": "61", "ID_OPERADORA": 107, "COMPARTILHADA": True, "LINH_ATIV_EMPR": True, "DAT_BAIX": None}]
+        mock_get.return_value = [
+            {
+                "COD_LINH": "61",
+                "ID_OPERADORA": 107,
+                "COMPARTILHADA": True,
+                "LINH_ATIV_EMPR": True,
+                "DAT_BAIX": None,
+            }
+        ]
 
         response = client.get("/linha")
         assert response.status_code == 200
@@ -185,7 +187,15 @@ class TestLinha:
     @patch("routes.linha.LinhaService.get_linha")
     def test_get_route_with_data_baixa(self, mock_get, client, database):
         """Testa se a rota GET /linha retorna a lista com DAT_BAIX preenchido"""
-        mock_get.return_value = [{"COD_LINH": "62", "ID_OPERADORA": 108, "COMPARTILHADA": False, "LINH_ATIV_EMPR": False, "DAT_BAIX": "2026-08-28T11:00:00"}]
+        mock_get.return_value = [
+            {
+                "COD_LINH": "62",
+                "ID_OPERADORA": 108,
+                "COMPARTILHADA": False,
+                "LINH_ATIV_EMPR": False,
+                "DAT_BAIX": "2026-08-28T11:00:00",
+            }
+        ]
 
         response = client.get("/linha")
         assert response.status_code == 200

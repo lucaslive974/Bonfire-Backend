@@ -12,18 +12,20 @@ def error_app():
     with patch.object(BonfireApp, "checkAuth", return_value=None):
         application = BonfireApp("test_bonfire_errors")
         application.config.update({"TESTING": True})
-        
+
         # Register a test blueprint with routes that raise exceptions
         test_bp = Blueprint("test_errors", __name__)
-        
+
         @test_bp.route("/test-custom-exception")
         def _raise_custom_exception():  # pyright: ignore [reportUnusedFunction]
-            raise CustomException("Custom domain error occurred", status=418, error="TEAPOT_ERROR")
-            
+            raise CustomException(
+                "Custom domain error occurred", status=418, error="TEAPOT_ERROR"
+            )
+
         @test_bp.route("/test-generic-exception")
         def _raise_generic_exception():  # pyright: ignore [reportUnusedFunction]
             raise ValueError("Something unexpected went wrong")
-            
+
         application.register_blueprint(test_bp)
         yield application
 
@@ -40,7 +42,7 @@ def test_custom_exception_handling(error_client):
     assert data == {
         "error": "TEAPOT_ERROR",
         "message": "Um erro inesperado ocorreu.",
-        "status": 418
+        "status": 418,
     }
 
 
@@ -50,5 +52,5 @@ def test_generic_exception_handling(error_client):
     data = response.get_json()
     assert data == {
         "error": "Internal Server Error",
-        "message": "Ocorreu um erro interno no servidor."
+        "message": "Ocorreu um erro interno no servidor.",
     }

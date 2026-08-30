@@ -7,13 +7,18 @@ import pytest
 
 @pytest.mark.usefixtures("app", "client", "database")
 class TestInfracoes:
-    @patch("services.document_parser.factory.PyIngestionParserFactory.create_infracoes_csv_parser")
+    @patch(
+        "services.document_parser.factory.PyIngestionParserFactory.create_infracoes_csv_parser"
+    )
     def test_post_csv_route(self, mock_create, client, database):
         """Testa se a rota POST /infracao/csv importa com sucesso"""
         from unittest.mock import MagicMock
+
         mock_extractor = MagicMock()
+
         def fake_extract(stream, observer):
             observer.metrics["rows_processed"] = 5
+
         mock_extractor.extract.side_effect = fake_extract
         mock_create.return_value = mock_extractor
 
@@ -33,13 +38,18 @@ class TestInfracoes:
         res_data = json.loads(response.data)
         assert res_data["message"] == "5 autos de infração importados"
 
-    @patch("services.document_parser.factory.PyIngestionParserFactory.create_infracoes_xls_parser")
+    @patch(
+        "services.document_parser.factory.PyIngestionParserFactory.create_infracoes_xls_parser"
+    )
     def test_post_xls_route(self, mock_create, client, database):
         """Testa se a rota POST /infracao/xls insere com sucesso"""
         from unittest.mock import MagicMock
+
         mock_extractor = MagicMock()
+
         def fake_extract(stream, observer):
             observer.metrics["rows_processed"] = 10
+
         mock_extractor.extract.side_effect = fake_extract
         mock_create.return_value = mock_extractor
 

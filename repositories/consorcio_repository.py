@@ -33,7 +33,11 @@ class ConsorcioRepository:
 
     def get_by_id(self, id_consorcio: int) -> Operadora | None:
         """Busca uma operadora pelo ID."""
-        model = self.db.query(OperadoraModel).filter(OperadoraModel.ID == id_consorcio).first()
+        model = (
+            self.db.query(OperadoraModel)
+            .filter(OperadoraModel.ID == id_consorcio)
+            .first()
+        )
         return self._to_domain(model)
 
     def insert_bulk(self, consorcios_data: List[Dict[str, Any]]) -> int:
@@ -45,7 +49,8 @@ class ConsorcioRepository:
                 operadora = Operadora(
                     ID=int(id_consorcio),
                     NOME=data.get("NOME") or data.get("nome"),
-                    CONCESSIONARIA=data.get("CONCESSIONARIA") or data.get("concessionaria")
+                    CONCESSIONARIA=data.get("CONCESSIONARIA")
+                    or data.get("concessionaria"),
                 )
                 model = self._to_model(operadora)
                 self.db.merge(model)
@@ -60,9 +65,13 @@ class ConsorcioRepository:
             if id_consorcio is not None:
                 try:
                     id_consorcio_int = int(id_consorcio)
-                except (ValueError, TypeError):
+                except ValueError, TypeError:
                     continue
-                model = self.db.query(OperadoraModel).filter(OperadoraModel.ID == id_consorcio_int).first()
+                model = (
+                    self.db.query(OperadoraModel)
+                    .filter(OperadoraModel.ID == id_consorcio_int)
+                    .first()
+                )
                 if model:
                     operadora = self._to_domain(model)
                     if operadora:
@@ -75,5 +84,9 @@ class ConsorcioRepository:
 
     def delete(self, id_consorcio: int) -> int:
         """Exclui um consórcio pelo ID."""
-        deleted = self.db.query(OperadoraModel).filter(OperadoraModel.ID == id_consorcio).delete()
+        deleted = (
+            self.db.query(OperadoraModel)
+            .filter(OperadoraModel.ID == id_consorcio)
+            .delete()
+        )
         return deleted

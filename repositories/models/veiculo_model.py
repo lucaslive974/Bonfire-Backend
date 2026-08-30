@@ -4,7 +4,7 @@ from repositories.models.Base import Base
 
 
 class VeiculoModel(Base):
-    __tablename__ = 'veiculos'
+    __tablename__ = "veiculos"
 
     NUM_VEIC = Column(Integer, primary_key=True)
     IDN_PLAC_VEIC = Column(String(10), unique=True, nullable=True)

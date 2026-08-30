@@ -33,7 +33,11 @@ class VeiculoRepository:
         return [self._to_domain(m) for m in models if m is not None]
 
     def get_by_id(self, num_veic: int) -> Veiculo | None:
-        model = self.db.query(VeiculoModel).filter(VeiculoModel.NUM_VEIC == num_veic).first()
+        model = (
+            self.db.query(VeiculoModel)
+            .filter(VeiculoModel.NUM_VEIC == num_veic)
+            .first()
+        )
         return self._to_domain(model)
 
     def insert(self, veiculo: Veiculo) -> bool:
@@ -64,9 +68,13 @@ class VeiculoRepository:
             if num_veic is not None:
                 try:
                     num_veic_int = int(num_veic)
-                except (ValueError, TypeError):
+                except ValueError, TypeError:
                     continue
-                model = self.db.query(VeiculoModel).filter(VeiculoModel.NUM_VEIC == num_veic_int).first()
+                model = (
+                    self.db.query(VeiculoModel)
+                    .filter(VeiculoModel.NUM_VEIC == num_veic_int)
+                    .first()
+                )
                 if model:
                     veiculo = self._to_domain(model)
                     if veiculo:
@@ -79,5 +87,9 @@ class VeiculoRepository:
         return counter
 
     def delete(self, num_veic: int) -> int:
-        deleted = self.db.query(VeiculoModel).filter(VeiculoModel.NUM_VEIC == num_veic).delete()
+        deleted = (
+            self.db.query(VeiculoModel)
+            .filter(VeiculoModel.NUM_VEIC == num_veic)
+            .delete()
+        )
         return deleted

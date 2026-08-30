@@ -15,6 +15,3 @@ if __name__ == "__main__":
     else:
         logger.warn("::Application running in production mode by WSGI::")
         serve(app, host="0.0.0.0", port=args.port())
-
-
-

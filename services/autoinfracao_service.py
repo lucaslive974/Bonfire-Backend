@@ -25,8 +25,8 @@ class AutoInfracaoService:
     def check_infracoes(csv: Any) -> Tuple[int, int, List[str]]:
         """Realiza a verificação dos autos de infração no banco de dados."""
         try:
-            data_frame = pd.read_csv(csv, header=0, delimiter=';')
-            values = data_frame['NUM_AI'].unique().tolist()
+            data_frame = pd.read_csv(csv, header=0, delimiter=";")
+            values = data_frame["NUM_AI"].unique().tolist()
         except Exception as e:
             raise ErrReadingFile(f"Erro ao ler o arquivo CSV. {e}", 500)
 

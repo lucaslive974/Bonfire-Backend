@@ -8,7 +8,13 @@ class TestConsorcio:
     @patch("routes.consorcio.ConsorcioService.get_consorcios")
     def test_get_route(self, mock_get, client, database):
         """Testa se a rota GET /consorcio retorna a lista correta de consórcios"""
-        mock_get.return_value = [{"ID": 107, "NOME": "MILENIO TRANSPORTES", "CONCESSIONARIA": "CONSORCIO PAMPULHA"}]
+        mock_get.return_value = [
+            {
+                "ID": 107,
+                "NOME": "MILENIO TRANSPORTES",
+                "CONCESSIONARIA": "CONSORCIO PAMPULHA",
+            }
+        ]
 
         response = client.get("/consorcio")
         assert response.status_code == 200
@@ -26,7 +32,7 @@ class TestConsorcio:
             {
                 "ID": 107,
                 "NOME": "MILENIO TRANSPORTES",
-                "CONCESSIONARIA": "CONSORCIO PAMPULHA"
+                "CONCESSIONARIA": "CONSORCIO PAMPULHA",
             }
         ]
 
@@ -45,7 +51,7 @@ class TestConsorcio:
             {
                 "ID": 107,
                 "NOME": "MILENIO TRANSPORTES ALTERADO",
-                "CONCESSIONARIA": "CONSORCIO PAMPULHA"
+                "CONCESSIONARIA": "CONSORCIO PAMPULHA",
             }
         ]
 
@@ -64,7 +70,7 @@ class TestConsorcio:
             {
                 "ID": 107,
                 "NOME": "MILENIO TRANSPORTES ALTERADO",
-                "CONCESSIONARIA": "CONSORCIO PAMPULHA"
+                "CONCESSIONARIA": "CONSORCIO PAMPULHA",
             }
         ]
 

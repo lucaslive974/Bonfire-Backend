@@ -29,10 +29,14 @@ class RecursoService:
         return parse_docx_recursos(docx, first_instance)
 
     @staticmethod
-    def insert_primeira_instancia(recursos_primeira_instancia: List[Dict[str, Any]] | None) -> int:
+    def insert_primeira_instancia(
+        recursos_primeira_instancia: List[Dict[str, Any]] | None,
+    ) -> int:
         """Insere no banco de dados uma lista de recursos de primeira instância."""
         if recursos_primeira_instancia is None:
-            raise ErrNullInsert('Lista de recursos vazia, nenhum registro inserido', 400)
+            raise ErrNullInsert(
+                "Lista de recursos vazia, nenhum registro inserido", 400
+            )
 
         with get_db() as db:
             repo = RecursoRepository(db)
@@ -40,10 +44,14 @@ class RecursoService:
             return count
 
     @staticmethod
-    def insert_segunda_instancia(recursos_segunda_instancia: List[Dict[str, Any]] | None) -> int:
+    def insert_segunda_instancia(
+        recursos_segunda_instancia: List[Dict[str, Any]] | None,
+    ) -> int:
         """Insere no banco de dados uma lista de recursos de segunda instância."""
         if recursos_segunda_instancia is None:
-            raise ErrNullInsert('Lista de recursos vazia, nenhum registro inserido', 400)
+            raise ErrNullInsert(
+                "Lista de recursos vazia, nenhum registro inserido", 400
+            )
 
         with get_db() as db:
             repo = RecursoRepository(db)

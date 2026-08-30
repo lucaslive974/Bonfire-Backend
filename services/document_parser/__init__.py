@@ -14,5 +14,5 @@ __all__ = [
     "ExtractionObserver",
     "ExtractorFactory",
     "DocumentParsingError",
-    "UnsupportedFormatError"
+    "UnsupportedFormatError",
 ]

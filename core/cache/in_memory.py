@@ -10,6 +10,7 @@ class InMemoryCache(ICache):
     Thread-safe in-memory cache implementation.
     Drop-in ready to be replaced by RedisCache in the future.
     """
+
     def __init__(self):
         # Store dict: key -> (value, expiry_timestamp_or_None)
         self._store: Dict[str, Tuple[Any, Optional[float]]] = {}
@@ -19,13 +20,13 @@ class InMemoryCache(ICache):
         with self._lock:
             if key not in self._store:
                 return None
-            
+
             value, expiry = self._store[key]
             if expiry is not None and time.time() > expiry:
                 # Lazy expiration
                 del self._store[key]
                 return None
-            
+
             return value
 
     def set(self, key: str, value: Any, ttl_seconds: Optional[int] = None) -> None:

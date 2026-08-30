@@ -7,9 +7,9 @@ from exceptions.CustomExceptions import (
 )
 
 __all__ = [
-    'CustomException',
-    'ErrDataPubli',
-    'ErrNullInsert',
-    'ErrInvalidDbConfig',
-    'ErrCreatingDbConnection'
+    "CustomException",
+    "ErrDataPubli",
+    "ErrNullInsert",
+    "ErrInvalidDbConfig",
+    "ErrCreatingDbConnection",
 ]
