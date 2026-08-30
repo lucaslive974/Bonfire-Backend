@@ -1,4 +1,9 @@
 import os
+from unittest.mock import patch
+
+import pytest
+
+from app import BonfireApp
 
 # Set dummy environment variables to prevent Config from raising ErrMissingRequiredEnv during test imports
 for key, val in [
@@ -8,9 +13,6 @@ for key, val in [
 ]:
     os.environ.setdefault(key, val)
 
-from unittest.mock import patch
-
-import pytest
 
 # Mock database connection check and Keycloak connection check during test imports
 patcher_db = patch("repositories.database.check_database_connection")
@@ -18,8 +20,6 @@ patcher_kc_conn = patch("core.auth.authenticator.KeyCloakAuthenticator.checkConn
 
 patcher_db.start()
 patcher_kc_conn.start()
-
-from app import BonfireApp
 
 
 @pytest.fixture(scope="session")

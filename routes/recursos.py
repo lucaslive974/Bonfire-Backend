@@ -1,13 +1,10 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, current_app, jsonify, request
 
 from exceptions.CustomExceptions import ErrIncompleteData
+from services.document_parser.core import ExtractionObserver
 from services.recurso_service import RecursoService
 
 RecursoPrimeiraInstanciaBlueprint = Blueprint("recursoPrimeiraInstancia", __name__)
-
-from flask import current_app
-
-from services.document_parser.core import ExtractionObserver
 
 
 @RecursoPrimeiraInstanciaBlueprint.route(

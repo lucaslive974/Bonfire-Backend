@@ -13,7 +13,7 @@ class LinhaService:
         with get_db() as db:
             repo = LinhaRepository(db)
             linhas = repo.get_all()
-            return [l.as_dict() for l in linhas]
+            return [linha.as_dict() for linha in linhas]
 
     @staticmethod
     def insert_linha(line_data: List[Dict[str, Any]]) -> int:
