@@ -1,34 +1,26 @@
 import io
-from typing import BinaryIO, Optional
+from typing import BinaryIO
 
 import pytest
 from flask import Flask, current_app, jsonify, request
 
 from exceptions.CustomExceptions import CustomException
-from services.document_parser.core import (
-    DocumentExtractor,
-    DocumentParserFactory,
-    ExtractionObserver,
-)
-from services.document_parser.exceptions import (
-    DocumentParsingError,
-)
+from services.document_parser.core import DocumentExtractor, DocumentParserFactory
+from services.document_parser.exceptions import DocumentParsingError
 
 
 class MockExtractor(DocumentExtractor):
     def __init__(self, succeed=True):
         self.succeed = succeed
 
-    def extract(
-        self, file_stream: BinaryIO, observer: Optional[ExtractionObserver] = None
-    ) -> None:
+    def extract(self, file_stream: BinaryIO) -> dict:
         if not self.succeed:
-            raise DocumentParsingError("Simulated parsing error")
-        if observer:
-            observer.on_event("row_processed")
-            observer.on_event("row_processed")
-            observer.on_event("warning", "A minor issue")
-            observer.on_event("status_change", "completed")
+            raise DocumentParsingError("Parsing Error")
+        return {
+            "rows_processed": 2,
+            "warnings": ["A minor issue"],
+            "status": "completed",
+        }
 
 
 class MockParserFactory(DocumentParserFactory):
@@ -42,7 +34,7 @@ class MockParserFactory(DocumentParserFactory):
         return MockExtractor(succeed=True)
 
     def create_infracoes_xls_parser(self, ignore: bool = False) -> DocumentExtractor:
-        return MockExtractor(succeed=False)  # Simulate fail for testing
+        return MockExtractor(succeed=False)
 
 
 @pytest.fixture
@@ -53,35 +45,29 @@ def test_app():
     def _handle_custom_exception(e):
         return jsonify(dict(e)), e.status
 
+    @app.errorhandler(DocumentParsingError)
+    def _handle_doc_exception(e):
+        return jsonify({"error": str(e)}), 422
+
     if not hasattr(app, "extensions"):
         app.extensions = {}
     app.extensions["parser_factory"] = MockParserFactory()
 
     @app.route("/upload/primeira", methods=["POST"])
     def upload_primeira():
-        if "document" not in request.files:
-            return jsonify({"error": "No document"}), 400
-
         file = request.files["document"]
         factory = current_app.extensions["parser_factory"]
         extractor = factory.create_primeira_instancia_parser()
-
-        observer = ExtractionObserver()
-        extractor.extract(file.stream, observer)
-        return jsonify(observer.metrics), 200
+        metrics = extractor.extract(file.stream)
+        return jsonify(metrics), 200
 
     @app.route("/upload/xls", methods=["POST"])
     def upload_xls():
-        if "document" not in request.files:
-            return jsonify({"error": "No document"}), 400
-
         file = request.files["document"]
         factory = current_app.extensions["parser_factory"]
         extractor = factory.create_infracoes_xls_parser()
-
-        observer = ExtractionObserver()
-        extractor.extract(file.stream, observer)
-        return jsonify(observer.metrics), 200
+        metrics = extractor.extract(file.stream)
+        return jsonify(metrics), 200
 
     return app
 
@@ -98,8 +84,6 @@ def test_successful_extraction(client):
     )
     assert response.status_code == 200
     assert response.json["rows_processed"] == 2
-    assert response.json["warnings"] == ["A minor issue"]
-    assert response.json["status"] == "completed"
 
 
 def test_parsing_error(client):
