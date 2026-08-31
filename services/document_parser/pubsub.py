@@ -58,7 +58,7 @@ class AsyncMessageProcessor(threading.Thread):
             self._buffer.clear()
         except Exception as e:
             # NACK: Handle failure
-            logger.warning(
+            logger.warn(
                 f"Batch processing failed. Triggering backoff/retry. Error: {e}"
             )
             time.sleep(2)  # Simple backoff
