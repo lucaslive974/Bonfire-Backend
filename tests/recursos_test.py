@@ -12,7 +12,6 @@ from services.recurso_service import RecursoService
 
 def test_recurso_primeira_instancia_model():
     model = RecursoPrimeiraInstancia(
-        ID=1,
         NUM_AI="123456-A",
         NUM_ATA=5,
         NUM_RECURSO="123/2026",
@@ -22,7 +21,6 @@ def test_recurso_primeira_instancia_model():
     )
     data = model.to_dict()
     assert data == {
-        "ID": 1,
         "NUM_AI": "123456-A",
         "NUM_ATA": 5,
         "NUM_RECURSO": "123/2026",
@@ -34,7 +32,6 @@ def test_recurso_primeira_instancia_model():
 
 def test_recurso_segunda_instancia_model():
     model = RecursoSegundaInstancia(
-        ID=2,
         NUM_AI="654321-B",
         NUM_RECURSO="321/2026",
         NOM_CONC="Consórcio Leste",
@@ -43,7 +40,6 @@ def test_recurso_segunda_instancia_model():
     )
     data = model.to_dict()
     assert data == {
-        "ID": 2,
         "NUM_AI": "654321-B",
         "NUM_RECURSO": "321/2026",
         "NOM_CONC": "Consórcio Leste",

@@ -9,7 +9,6 @@ class RecursoPrimeiraInstancia(SerializableMixin):
 
     def __init__(
         self,
-        ID: int | None = None,
         NUM_AI: str | None = None,
         NUM_ATA: int | str | None = None,
         NUM_RECURSO: str | None = None,
@@ -18,7 +17,6 @@ class RecursoPrimeiraInstancia(SerializableMixin):
         DAT_PUBL: date | datetime | str | None = None,
         **kwargs: Any,
     ):
-        self.ID = int(ID) if ID is not None else None
         self.NUM_AI = NUM_AI
         self.NUM_ATA = int(NUM_ATA) if NUM_ATA is not None else None
         self.NUM_RECURSO = NUM_RECURSO
@@ -51,7 +49,6 @@ class RecursoSegundaInstancia(SerializableMixin):
 
     def __init__(
         self,
-        ID: int | None = None,
         NUM_AI: str | None = None,
         NUM_RECURSO: str | None = None,
         NOM_CONC: str | None = None,
@@ -59,7 +56,6 @@ class RecursoSegundaInstancia(SerializableMixin):
         DAT_PUBL: date | datetime | str | None = None,
         **kwargs: Any,
     ):
-        self.ID = int(ID) if ID is not None else None
         self.NUM_AI = NUM_AI
         self.NUM_RECURSO = NUM_RECURSO
         self.NOM_CONC = NOM_CONC
