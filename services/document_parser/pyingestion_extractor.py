@@ -88,7 +88,7 @@ class PyIngestionDocumentExtractor(DocumentExtractor):
         **kwargs,
     ):
         if not success:
-            logger.warning(
+            logger.warn(
                 f"PyIngestion Event: PAGE_PROCESSED - Page {page_index}/{total_pages} processing failed."
             )
 
