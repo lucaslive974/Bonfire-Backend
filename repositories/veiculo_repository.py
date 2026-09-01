@@ -68,7 +68,7 @@ class VeiculoRepository:
             if num_veic is not None:
                 try:
                     num_veic_int = int(num_veic)
-                except ValueError, TypeError:
+                except (ValueError, TypeError):
                     continue
                 model = (
                     self.db.query(VeiculoModel)

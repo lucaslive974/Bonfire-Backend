@@ -65,7 +65,7 @@ class ConsorcioRepository:
             if id_consorcio is not None:
                 try:
                     id_consorcio_int = int(id_consorcio)
-                except ValueError, TypeError:
+                except (ValueError, TypeError):
                     continue
                 model = (
                     self.db.query(OperadoraModel)
