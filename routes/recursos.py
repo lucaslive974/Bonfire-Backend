@@ -25,7 +25,7 @@ def post_recursos_primeira_instancia():
     return jsonify(
         {
             "message": "itens Extraídos e armazenados com sucesso!",
-            "counter": metrics.get("rows_processed", 0),
+            "counter": metrics.get("inserted", 0),
         }
     ), 200
 
@@ -48,7 +48,7 @@ def post_recursos_segunda_instancia():
     return jsonify(
         {
             "message": "itens Extraídos e armazenados com sucesso!",
-            "counter": metrics.get("rows_processed", 0),
+            "counter": metrics.get("inserted", 0),
         }
     ), 200
 

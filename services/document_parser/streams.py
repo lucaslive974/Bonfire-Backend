@@ -16,7 +16,7 @@ from exceptions.CustomExceptions import (
     ErrQuantityOfAtas,
     ErrReadingFile,
 )
-from services.document_parser.pubsub import AsyncMessageProcessor
+from services.document_parser.pubsub import SyncBatchProcessor
 from services.parsers import normalize_auto_infraction_id
 from services.recurso_service import RecursoService
 
@@ -43,9 +43,7 @@ def _parse_val_infr(value: Any) -> float | None:
 class BonfireRecursoWriteStream(OutputStream[Any]):
     def __init__(self, first_instance: bool = True, batch_size: int = 100):
         self.first_instance = first_instance
-        self.processor = AsyncMessageProcessor(
-            self._process_batch, batch_size=batch_size
-        )
+        self.processor = SyncBatchProcessor(self._process_batch, batch_size=batch_size)
         self.processor.start()
         super().__init__()
 
@@ -56,11 +54,11 @@ class BonfireRecursoWriteStream(OutputStream[Any]):
         else:
             self.processor.publish(item)
 
-    def _process_batch(self, batch: List[Any]) -> None:
+    def _process_batch(self, batch: List[Any]) -> int:
         if self.first_instance:
-            RecursoService.insert_primeira_instancia(batch)
+            return RecursoService.insert_primeira_instancia(batch)
         else:
-            RecursoService.insert_segunda_instancia(batch)
+            return RecursoService.insert_segunda_instancia(batch)
 
     def flush(self) -> None:
         self.processor.stop()
@@ -69,9 +67,7 @@ class BonfireRecursoWriteStream(OutputStream[Any]):
 class BonfireInfracaoWriteStream(OutputStream[Any]):
     def __init__(self, ignore: bool = False, batch_size: int = 1000):
         self.ignore = ignore
-        self.processor = AsyncMessageProcessor(
-            self._process_batch, batch_size=batch_size
-        )
+        self.processor = SyncBatchProcessor(self._process_batch, batch_size=batch_size)
         self.processor.start()
         super().__init__()
 
@@ -82,13 +78,13 @@ class BonfireInfracaoWriteStream(OutputStream[Any]):
         else:
             self.processor.publish(item)
 
-    def _process_batch(self, batch: List[Any]) -> None:
+    def _process_batch(self, batch: List[Any]) -> int:
         from repositories.autoinfracao_repository import AutoInfracaoRepository
         from repositories.database import get_db
 
         with get_db() as db:
             repo = AutoInfracaoRepository(db)
-            repo.insert_bulk_rows(batch, ignore=self.ignore)
+            return repo.insert_bulk_rows(batch, ignore=self.ignore)
 
     def flush(self) -> None:
         self.processor.stop()

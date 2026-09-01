@@ -62,7 +62,9 @@ class PyIngestionDocumentExtractor(DocumentExtractor):
             if hasattr(output_stream, "processor") and hasattr(
                 output_stream.processor, "inserted_count"
             ):
-                self.metrics["rows_processed"] = output_stream.processor.inserted_count
+                self.metrics["rows_processed"] = output_stream.processor.total_processed
+                self.metrics["inserted"] = output_stream.processor.inserted_count
+                self.metrics["ignored"] = output_stream.processor.ignored_count
 
             if not success:
                 raise DocumentParsingError("Extraction pipeline failed or was aborted.")
