@@ -1,11 +1,16 @@
 import os
 import tempfile
 
+import numpy as np
+import pandas as pd
 import pytest
 from docx import Document
 
 from exceptions.CustomExceptions import ErrDataPubli
-from services.document_parser.streams import RecursosDocxInputStream
+from services.document_parser.streams import (
+    InfracoesTransformStream,
+    RecursosDocxInputStream,
+)
 from services.parsers import normalize_auto_infraction_id
 
 
@@ -14,6 +19,31 @@ def test_normalize_auto_infraction_id():
     assert normalize_auto_infraction_id("12345-A") == "12345-A"
     assert normalize_auto_infraction_id("1234-") == "1234-"
     assert normalize_auto_infraction_id("") == ""
+
+
+def test_infracoes_transform_accepts_brazilian_currency_and_missing_value():
+    data_frame = pd.DataFrame(
+        {
+            "NUM_AI": ["12345-A", "12346-A"],
+            "DAT_OCOR_INFR": ["01/09/2026", "02/09/2026"],
+            "HORA": ["10:30", "11:45"],
+            "DAT_EMIS_NOTF": ["01/09/2026", np.nan],
+            "DAT_LIMT_RECU": ["15/09/2026", np.nan],
+            "VAL_INFR": ["R$ 1.498,91", np.nan],
+        }
+    )
+    stream = InfracoesTransformStream(
+        datetime_format="%d/%m/%Y %H:%M",
+        date_format="%d/%m/%Y",
+        convert_val_infr=True,
+    )
+
+    records = stream.transform(data_frame)
+
+    assert records[0]["VAL_INFR"] == 1498.91
+    assert records[1]["VAL_INFR"] is None
+    assert records[1]["DAT_EMIS_NOTF"] is None
+    assert records[1]["DAT_LIMT_RECU"] is None
 
 
 def test_recursos_docx_stream():
