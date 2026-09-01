@@ -9,10 +9,10 @@ from docx import Document
 from docx.table import Table
 from pyingestion import ExtractionSession, InputStream, OutputStream, TransformStream
 
-from classes.Conversores import Conversores
 from exceptions.CustomExceptions import (
     ErrDataPubli,
     ErrIncorrectInstance,
+    ErrInvalidFileData,
     ErrQuantityOfAtas,
     ErrReadingFile,
 )
@@ -108,12 +108,22 @@ class RecursosDocxInputStream(InputStream[Any, Dict[str, Any]]):
 
     def extract_data_publ(self, doc: Document) -> str:
         data_publicacao_extracted = " ".join([p.text for p in doc.paragraphs])
-        padrao_data = r"PUBLICADO NO DI[ÁA]RIO OFICIAL DO MUNIC[ÍI]PIO DE BELO HORIZONTE EM (\d{2}/\d{2}/\d{4})"
+        padrao_data = r"PUBLICADO NO DI[ÁA]RIO OFICIAL DO MUNIC[ÍI]PIO DE BELO HORIZONTE EM (\d{2}[/.-]\d{2}[/.-]\d{2,4})"
         match_data_publicacao = re.search(padrao_data, data_publicacao_extracted)
         dat_publ = match_data_publicacao.group(1) if match_data_publicacao else None
 
         if dat_publ is not None:
-            dat_publ = Conversores.converte_data(dat_publ)
+            from dateutil.parser import parse as parse_date
+
+            try:
+                parsed_date = parse_date(dat_publ, dayfirst=True)
+                dat_publ = parsed_date.strftime("%Y-%m-%d")
+            except Exception:
+                raise ErrDataPubli(
+                    "Formato de data de publicação inválido ou incompreensível",
+                    400,
+                    friendly_message=f"A data de publicação encontrada ('{dat_publ}') está em um formato inválido.",
+                )
         else:
             raise ErrDataPubli("Data de publicação não encontrada no documento", 400)
         return dat_publ
@@ -142,12 +152,32 @@ class RecursosDocxInputStream(InputStream[Any, Dict[str, Any]]):
         return num_atas or None
 
     def process_table(self, table: Table, dat_publ: str, num_ata: int | None):
-        for row in table.rows:
+        for row_idx, row in enumerate(table.rows):
             row_data = [cell.text.strip() for cell in row.cells]
+
+            if not row_data:
+                continue
+
             num_recurso = row_data[0]
             if num_recurso == "RECURSO":
                 continue
+
+            if len(row_data) < 4:
+                raise ErrInvalidFileData(
+                    friendly_message=f"Erro na tabela DOCX (Ata {num_ata or 'Desconhecida'}): A linha {row_idx + 1} possui {len(row_data)} coluna(s), mas 4 eram esperadas."
+                )
+
+            if not num_recurso:
+                raise ErrInvalidFileData(
+                    friendly_message=f"Erro na tabela DOCX (Ata {num_ata or 'Desconhecida'}): O número do recurso está vazio na linha {row_idx + 1}."
+                )
+
             num_ai = normalize_auto_infraction_id(row_data[1])
+            if not num_ai:
+                raise ErrInvalidFileData(
+                    friendly_message=f"Erro na tabela DOCX (Ata {num_ata or 'Desconhecida'}): O número do Auto de Infração está vazio na linha {row_idx + 1}."
+                )
+
             nom_conc = row_data[2]
             valida_resultado = str(row_data[3]).upper()
             resultado = valida_resultado != "IMPROCEDENTE"
@@ -294,6 +324,27 @@ class InfracoesTransformStream(TransformStream[pd.DataFrame, List[Dict[str, Any]
 
     def transform(self, data_frame: pd.DataFrame) -> List[Dict[str, Any]]:
         try:
+            if "NUM_AI" in data_frame.columns:
+                missing_ai = data_frame[
+                    data_frame["NUM_AI"].isna() | (data_frame["NUM_AI"] == "")
+                ]
+                if not missing_ai.empty:
+                    err_idx = missing_ai.index[0] + 2
+                    raise ErrInvalidFileData(
+                        friendly_message=f"Erro no arquivo: Campo 'Número do AI' (NUM_AI) está vazio na linha {err_idx}."
+                    )
+
+            if "DAT_LIMT_RECU" in data_frame.columns:
+                missing_dat = data_frame[
+                    data_frame["DAT_LIMT_RECU"].isna()
+                    | (data_frame["DAT_LIMT_RECU"] == "")
+                ]
+                if not missing_dat.empty:
+                    err_idx = missing_dat.index[0] + 2
+                    raise ErrInvalidFileData(
+                        friendly_message=f"Erro no arquivo: Campo 'Data Limite do Recurso' (DAT_LIMT_RECU) está vazio na linha {err_idx}."
+                    )
+
             if "HORA" in data_frame.columns:
                 data_frame["DAT_OCOR_INFR"] = (
                     data_frame["DAT_OCOR_INFR"].astype(str)
@@ -301,15 +352,35 @@ class InfracoesTransformStream(TransformStream[pd.DataFrame, List[Dict[str, Any]
                     + data_frame["HORA"].astype(str)
                 )
 
-            data_frame["DAT_OCOR_INFR"] = pd.to_datetime(
-                data_frame["DAT_OCOR_INFR"], format=self.datetime_format
-            )
-            data_frame["DAT_EMIS_NOTF"] = pd.to_datetime(
-                data_frame["DAT_EMIS_NOTF"], format=self.date_format
-            )
-            data_frame["DAT_LIMT_RECU"] = pd.to_datetime(
-                data_frame["DAT_LIMT_RECU"], format=self.date_format
-            )
+            if "DAT_OCOR_INFR" in data_frame.columns:
+                data_frame["DAT_OCOR_INFR"] = pd.to_datetime(
+                    data_frame["DAT_OCOR_INFR"],
+                    format="mixed",
+                    dayfirst=True,
+                    errors="coerce",
+                )
+            if "DAT_EMIS_NOTF" in data_frame.columns:
+                data_frame["DAT_EMIS_NOTF"] = pd.to_datetime(
+                    data_frame["DAT_EMIS_NOTF"],
+                    format="mixed",
+                    dayfirst=True,
+                    errors="coerce",
+                )
+            if "DAT_LIMT_RECU" in data_frame.columns:
+                data_frame["DAT_LIMT_RECU"] = pd.to_datetime(
+                    data_frame["DAT_LIMT_RECU"],
+                    format="mixed",
+                    dayfirst=True,
+                    errors="coerce",
+                )
+
+            if "DAT_LIMT_RECU" in data_frame.columns:
+                nat_dat = data_frame[data_frame["DAT_LIMT_RECU"].isna()]
+                if not nat_dat.empty:
+                    err_idx = nat_dat.index[0] + 2
+                    raise ErrInvalidFileData(
+                        friendly_message=f"Erro no arquivo: A 'Data Limite' na linha {err_idx} está em um formato inválido ou corrompido."
+                    )
 
             if self.convert_val_infr and "VAL_INFR" in data_frame.columns:
                 data_frame["VAL_INFR"] = data_frame["VAL_INFR"].map(_parse_val_infr)
@@ -318,7 +389,10 @@ class InfracoesTransformStream(TransformStream[pd.DataFrame, List[Dict[str, Any]
                 data_frame["DAT_CANC"].isnull().all()
             ):
                 data_frame["DAT_CANC"] = pd.to_datetime(
-                    data_frame["DAT_CANC"], format=self.date_format
+                    data_frame["DAT_CANC"],
+                    format="mixed",
+                    dayfirst=True,
+                    errors="coerce",
                 )
 
             if "HORA" in data_frame.columns:
@@ -326,6 +400,8 @@ class InfracoesTransformStream(TransformStream[pd.DataFrame, List[Dict[str, Any]
 
             data_frame.replace([np.nan], [None], inplace=True)
             return data_frame.to_dict(orient="records")
+        except ErrInvalidFileData:
+            raise
         except Exception as e:
             raise ErrReadingFile(f"Erro no transform de Infrações. {e}", 500)
 

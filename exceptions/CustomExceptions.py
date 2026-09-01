@@ -187,3 +187,15 @@ class ErrMissingRequiredEnv(CustomException):
         friendly_message: str = "Variável de ambiente obrigatória não encontrada.",
     ):
         super().__init__(message, 500, "Missing Required Env", friendly_message)
+
+
+class ErrInvalidFileData(CustomException):
+    def __init__(
+        self,
+        friendly_message: str,
+        status: int = 400,
+        error: str = "Invalid File Data",
+    ):
+        super().__init__(
+            "Erro de formatação/dado no arquivo", status, error, friendly_message
+        )

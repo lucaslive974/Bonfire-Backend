@@ -34,6 +34,7 @@ class PyIngestionDocumentExtractor(DocumentExtractor):
         return self.metrics
 
     def _run_extraction_pipeline(self, file_stream: BinaryIO) -> None:
+        self._last_error = None
         try:
             input_stream = self.input_stream_class()
             transform_stream = self.transform_stream_class()
@@ -67,9 +68,15 @@ class PyIngestionDocumentExtractor(DocumentExtractor):
                 self.metrics["ignored"] = output_stream.processor.ignored_count
 
             if not success:
+                if self._last_error:
+                    raise self._last_error
                 raise DocumentParsingError("Extraction pipeline failed or was aborted.")
 
         except Exception as e:
+            from exceptions.CustomExceptions import CustomException
+
+            if isinstance(e, CustomException):
+                raise
             if isinstance(e, DocumentParsingError):
                 raise
             raise DocumentParsingError(f"PyIngestion pipeline failed: {str(e)}")
@@ -96,6 +103,14 @@ class PyIngestionDocumentExtractor(DocumentExtractor):
 
     def _on_error(self, session, error_message: str, **kwargs):
         logger.error(f"PyIngestion Event: EXTRACTION_ERROR - {error_message}")
+        exception = kwargs.get("exception") or kwargs.get("error")
+        if exception:
+            self._last_error = exception
+        else:
+            from exceptions.CustomExceptions import ErrInvalidFileData
+
+            # Fallback para encapsular a string do erro em uma CustomException
+            self._last_error = ErrInvalidFileData(friendly_message=error_message)
 
     def _on_complete(self, session, successful_pages: int, total_pages: int, **kwargs):
         logger.info(
