@@ -6,6 +6,7 @@ from typing import Any, Dict, Generator, List
 import numpy as np
 import pandas as pd
 from docx import Document
+from docx.table import Table
 from pyingestion import ExtractionSession, InputStream, OutputStream, TransformStream
 
 from classes.Conversores import Conversores
@@ -94,12 +95,7 @@ class RecursosDocxInputStream(InputStream[Any, Dict[str, Any]]):
         self.current_unit_index = 0
         self.total_units = 0
 
-    def read(
-        self, source: Any, session: ExtractionSession | None = None
-    ) -> Generator[Dict[str, Any], None, None]:
-        doc = Document(source)
-
-        # 1. Extrair data da publicação
+    def extract_data_publ(self, doc: Document) -> str:
         data_publicacao_extracted = " ".join([p.text for p in doc.paragraphs])
         padrao_data = r"PUBLICADO NO DI[ÁA]RIO OFICIAL DO MUNIC[ÍI]PIO DE BELO HORIZONTE EM (\d{2}/\d{2}/\d{4})"
         match_data_publicacao = re.search(padrao_data, data_publicacao_extracted)
@@ -109,8 +105,9 @@ class RecursosDocxInputStream(InputStream[Any, Dict[str, Any]]):
             dat_publ = Conversores.converte_data(dat_publ)
         else:
             raise ErrDataPubli("Data de publicação não encontrada no documento", 400)
+        return dat_publ
 
-        # 2. Extrair atas
+    def extract_atas(self, doc: Document) -> list[int]:
         num_atas = []
         padrao_num_ata = r"ATA\s+DA\s+(\d+)ª"
         for paragraph in doc.paragraphs:
@@ -120,51 +117,53 @@ class RecursosDocxInputStream(InputStream[Any, Dict[str, Any]]):
 
         qtd_atas = len(num_atas)
         qtd_tables = len(doc.tables)
-        if (qtd_atas != qtd_tables) and self.first_instance:
+        if not self.first_instance and len(num_atas) > 0:
+            raise ErrIncorrectInstance(
+                "Instância incorreta. Importe como recurso de primeira instância"
+            )
+        if self.first_instance and (qtd_atas != qtd_tables):
             raise ErrQuantityOfAtas(
                 "Quantidade de atas encontradas difere da quantidade de tabelas",
                 qtd_atas,
                 qtd_tables,
                 400,
             )
+        return num_atas or None
 
-        # 3. Percorrer tabelas e yield
+    def process_table(self, table: Table, dat_publ: str, num_ata: int | None):
+        for row in table.rows:
+            row_data = [cell.text.strip() for cell in row.cells]
+            num_recurso = row_data[0]
+            if num_recurso == "RECURSO":
+                continue
+            num_ai = normalize_auto_infraction_id(row_data[1])
+            nom_conc = row_data[2]
+            valida_resultado = str(row_data[3]).upper()
+            resultado = valida_resultado != "IMPROCEDENTE"
+
+            recurso = {
+                "NUM_RECURSO": num_recurso,
+                "NUM_AI": num_ai,
+                "NOM_CONC": nom_conc,
+                "RESULTADO": resultado,
+                "DAT_PUBL": dat_publ,
+            }
+            if num_ata:
+                recurso["NUM_ATA"] = num_ata
+            yield recurso
+
+    def read(
+        self, source: Any, session: ExtractionSession | None = None
+    ) -> Generator[Dict[str, Any], None, None]:
+        doc = Document(source)
+        dat_publ = self.extract_data_publ(doc)
+        num_atas = self.extract_atas(doc)
+
         for index, table in enumerate(doc.tables):
-            num_ata = num_atas[index] if self.first_instance else 0
-
-            for row in table.rows:
-                row_data = [cell.text.strip() for cell in row.cells]
-                num_recurso = row_data[0]
-
-                if num_recurso == "RECURSO":
-                    continue
-
-                num_ai = normalize_auto_infraction_id(row_data[1])
-                nom_conc = row_data[2]
-                valida_resultado = str(row_data[3]).upper()
-                resultado = valida_resultado != "IMPROCEDENTE"
-
-                if not self.first_instance and (
-                    index < len(num_atas) and num_atas[index] is not None
-                ):
-                    raise ErrIncorrectInstance(
-                        "Instância incorreta. Importe como recurso de primeira instância"
-                    )
-
-                recurso_dict = {
-                    "NUM_RECURSO": num_recurso,
-                    "NUM_ATA": num_ata,
-                    "NUM_AI": num_ai,
-                    "NOM_CONC": nom_conc,
-                    "RESULTADO": resultado,
-                    "DAT_PUBL": dat_publ,
-                }
-
-                if session:
-                    # Simular processamento de "página/item"
-                    session.process_page_result(True, 1, 1)
-
-                yield recurso_dict
+            num_ata = num_atas[index] if self.first_instance else None
+            if session:
+                session.process_page_result(True, 1, 1)
+            yield from self.process_table(table, dat_publ, num_ata)
 
 
 class SanitizedTextIO(io.TextIOBase):
