@@ -1,6 +1,5 @@
 from typing import Any, Dict, List
 
-from sqlalchemy import insert
 from sqlalchemy.orm import Session
 
 from repositories.models.autoinfracao_model import AutoInfracaoModel
@@ -73,25 +72,27 @@ class RecursoRepository:
         ]
 
     def insert_primeira_instancia(self, rows: List[Dict[str, Any]]) -> int:
-        counter = 0
-        for row in rows:
-            stmt = (
-                insert(RecursoPrimeiraInstanciaModel).values(row).prefix_with("IGNORE")
-            )
-            result: Any = self.db.execute(stmt)
-            rowcount = getattr(result, "rowcount", 0)
-            if rowcount > 0:
-                counter += 1
-        return counter
+        if not rows:
+            return 0
+        from sqlalchemy.dialects.mysql import insert as mysql_insert
+
+        stmt = (
+            mysql_insert(RecursoPrimeiraInstanciaModel)
+            .values(rows)
+            .prefix_with("IGNORE")
+        )
+        result: Any = self.db.execute(stmt)
+        return getattr(result, "rowcount", 0)
 
     def insert_segunda_instancia(self, rows: List[Dict[str, Any]]) -> int:
-        counter = 0
-        for row in rows:
-            stmt = (
-                insert(RecursoSegundaInstanciaModel).values(row).prefix_with("IGNORE")
-            )
-            result: Any = self.db.execute(stmt)
-            rowcount = getattr(result, "rowcount", 0)
-            if rowcount > 0:
-                counter += 1
-        return counter
+        if not rows:
+            return 0
+        from sqlalchemy.dialects.mysql import insert as mysql_insert
+
+        stmt = (
+            mysql_insert(RecursoSegundaInstanciaModel)
+            .values(rows)
+            .prefix_with("IGNORE")
+        )
+        result: Any = self.db.execute(stmt)
+        return getattr(result, "rowcount", 0)

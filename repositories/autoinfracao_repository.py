@@ -63,16 +63,15 @@ class AutoInfracaoRepository:
         return count
 
     def insert_bulk_rows(self, rows: List[Dict[str, Any]], ignore: bool = False) -> int:
-        counter = 0
-        for row in rows:
-            if ignore:
-                stmt = insert(AutoInfracaoModel).values(row).prefix_with("IGNORE")
-                result: Any = self.db.execute(stmt)
-                rowcount = getattr(result, "rowcount", 0)
-                if rowcount > 0:
-                    counter += 1
-            else:
-                ai_model = AutoInfracaoModel(**row)
-                self.db.add(ai_model)
-                counter += 1
-        return counter
+        if not rows:
+            return 0
+
+        if ignore:
+            from sqlalchemy.dialects.mysql import insert as mysql_insert
+
+            stmt = mysql_insert(AutoInfracaoModel).values(rows).prefix_with("IGNORE")
+            result: Any = self.db.execute(stmt)
+            return getattr(result, "rowcount", 0)
+        else:
+            self.db.bulk_insert_mappings(AutoInfracaoModel, rows)
+            return len(rows)

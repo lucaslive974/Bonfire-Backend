@@ -19,7 +19,7 @@ def post_csv():
     extractor = factory.create_infracoes_csv_parser(ignore=True)
     metrics = extractor.extract(file.stream)
     return jsonify(
-        {"message": f"{metrics.get('rows_processed', 0)} autos de infração importados"}
+        {"message": f"{metrics.get('inserted', 0)} autos de infração importados"}
     ), 200
 
 
@@ -37,7 +37,7 @@ def post_xls():
     extractor = factory.create_infracoes_xls_parser(ignore=insert_ignore)
     metrics = extractor.extract(file.stream)
     return jsonify(
-        {"message": f"{metrics.get('rows_processed', 0)} autos inseridos com sucesso"}
+        {"message": f"{metrics.get('inserted', 0)} autos inseridos com sucesso"}
     ), 200
 
 
