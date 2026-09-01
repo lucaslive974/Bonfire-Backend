@@ -20,6 +20,21 @@ from services.document_parser.pubsub import AsyncMessageProcessor
 from services.parsers import normalize_auto_infraction_id
 from services.recurso_service import RecursoService
 
+
+def _parse_val_infr(value: Any) -> float | None:
+    """Convert optional Brazilian currency text into a database-ready number."""
+    if pd.isna(value):
+        return None
+
+    normalized = str(value).replace("R$", "").strip()
+    if not normalized:
+        return None
+    if "," in normalized:
+        normalized = normalized.replace(".", "").replace(",", ".")
+
+    return float(pd.to_numeric(normalized))
+
+
 # ==========================================
 # WRITE STREAMS (Output)
 # ==========================================
@@ -301,9 +316,7 @@ class InfracoesTransformStream(TransformStream[pd.DataFrame, List[Dict[str, Any]
             )
 
             if self.convert_val_infr and "VAL_INFR" in data_frame.columns:
-                data_frame["VAL_INFR"] = data_frame["VAL_INFR"].map(
-                    lambda x: pd.to_numeric(str(x).replace(",", "."))
-                )
+                data_frame["VAL_INFR"] = data_frame["VAL_INFR"].map(_parse_val_infr)
 
             if "DAT_CANC" in data_frame.columns and not bool(
                 data_frame["DAT_CANC"].isnull().all()
