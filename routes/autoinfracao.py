@@ -1,7 +1,6 @@
 from flask import Blueprint, current_app, jsonify, request
 
 from exceptions.CustomExceptions import ErrIncompleteData
-from services.autoinfracao_service import AutoInfracaoService
 
 AutoInfracaoBlueprint = Blueprint("infracao", __name__)
 
@@ -45,7 +44,13 @@ def post_xls():
 def get_infracoes():
     date = request.args.get("date")
     ai = request.args.get("ai")
-    return jsonify({"autos": AutoInfracaoService.get_infracoes(date, ai)}), 200
+
+    factory = current_app.extensions.get("service_factory")
+    if not factory:
+        raise ErrIncompleteData("ServiceFactory not configured", 500)
+    service = factory.get_autoinfracao_service()
+
+    return jsonify({"autos": service.get_infracoes(date, ai)}), 200
 
 
 @AutoInfracaoBlueprint.route("/infracao/check", methods=["POST"])
@@ -54,7 +59,13 @@ def check_infracoes():
         raise ErrIncompleteData(
             "Arquivo CSV de infrações não está presente na requisição", 400
         )
-    db_rows, file_rows, rows_not_present = AutoInfracaoService.check_infracoes(
+
+    factory = current_app.extensions.get("service_factory")
+    if not factory:
+        raise ErrIncompleteData("ServiceFactory not configured", 500)
+    service = factory.get_autoinfracao_service()
+
+    db_rows, file_rows, rows_not_present = service.check_infracoes(
         request.files["file"]
     )
     return jsonify(

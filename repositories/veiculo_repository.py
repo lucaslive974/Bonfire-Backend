@@ -3,10 +3,11 @@ from typing import Any, Dict, List
 from sqlalchemy.orm import Session
 
 from classes.Veiculo import Veiculo
+from repositories.interfaces import IVeiculoRepository
 from repositories.models.veiculo_model import VeiculoModel
 
 
-class VeiculoRepository:
+class VeiculoRepository(IVeiculoRepository):
     def __init__(self, db: Session):
         self.db = db
 

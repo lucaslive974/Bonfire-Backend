@@ -4,6 +4,7 @@ from sqlalchemy import insert
 from sqlalchemy.orm import Session
 
 from classes.AutoInfracao import AutoInfracao
+from repositories.interfaces import IAutoInfracaoRepository
 from repositories.models.autoinfracao_model import AutoInfracaoModel
 
 
@@ -14,7 +15,7 @@ def insert_ignore_mysql(table, conn, keys, data_iter):
     return result.rowcount
 
 
-class AutoInfracaoRepository:
+class AutoInfracaoRepository(IAutoInfracaoRepository):
     def __init__(self, db: Session):
         self.db = db
 

@@ -2,6 +2,7 @@ from typing import Any, Dict, List
 
 from sqlalchemy.orm import Session
 
+from repositories.interfaces import IRecursoRepository
 from repositories.models.autoinfracao_model import AutoInfracaoModel
 from repositories.models.recurso_model import (
     RecursoPrimeiraInstanciaModel,
@@ -9,7 +10,7 @@ from repositories.models.recurso_model import (
 )
 
 
-class RecursoRepository:
+class RecursoRepository(IRecursoRepository):
     def __init__(self, db: Session):
         self.db = db
 

@@ -127,13 +127,10 @@ def test_veiculo_repository_update_bulk_reactivate():
     assert mock_model.DAT_BAIX is None
 
 
-@patch("services.veiculo_service.get_db")
-@patch("services.veiculo_service.VeiculoRepository")
-def test_service_get_veiculos(mock_repo_cls, mock_get_db):
-    mock_db = MagicMock()
-    mock_get_db.return_value.__enter__.return_value = mock_db
-    mock_repo = MagicMock()
-    mock_repo_cls.return_value = mock_repo
+def test_service_get_veiculos():
+    mock_db_manager = MagicMock()
+    mock_session = mock_db_manager.session.return_value.__enter__.return_value
+    mock_repo = mock_session.get_veiculo_repository.return_value
 
     mock_veic = Veiculo(
         NUM_VEIC=1111,
@@ -143,7 +140,8 @@ def test_service_get_veiculos(mock_repo_cls, mock_get_db):
     )
     mock_repo.get_all.return_value = [mock_veic]
 
-    res = VeiculoService.get_veiculos()
+    service = VeiculoService(mock_db_manager)
+    res = service.get_veiculos()
     assert len(res) == 1
     assert res[0]["NUM_VEIC"] == 1111
     assert res[0]["DAT_BAIX"] == "2026-08-28T12:00:00"
@@ -151,7 +149,7 @@ def test_service_get_veiculos(mock_repo_cls, mock_get_db):
 
 @pytest.mark.usefixtures("app", "client", "database")
 class TestVeiculos:
-    @patch("routes.veiculos.VeiculoService.get_veiculos")
+    @patch("services.veiculo_service.VeiculoService.get_veiculos")
     def test_get_route(self, mock_get, client, database):
         """Testa se a rota GET /veiculos retorna 200 e a lista correta"""
         mock_get.return_value = [
@@ -172,7 +170,7 @@ class TestVeiculos:
         assert data["veiculos"][0]["NUM_VEIC"] == 1111
         assert data["veiculos"][0]["DAT_BAIX"] is None
 
-    @patch("routes.veiculos.VeiculoService.get_veiculos")
+    @patch("services.veiculo_service.VeiculoService.get_veiculos")
     def test_get_route_with_data_baixa(self, mock_get, client, database):
         """Testa se a rota GET /veiculos retorna 200 com DAT_BAIX preenchido"""
         mock_get.return_value = [
@@ -193,7 +191,7 @@ class TestVeiculos:
         assert data["veiculos"][0]["NUM_VEIC"] == 2222
         assert data["veiculos"][0]["DAT_BAIX"] == "2026-08-28T10:30:00"
 
-    @patch("routes.veiculos.VeiculoService.insert_veiculos")
+    @patch("services.veiculo_service.VeiculoService.insert_veiculos")
     def test_insert_route(self, mock_insert, client, database):
         """Testa a rota POST /veiculos"""
         mock_insert.return_value = 1
@@ -209,7 +207,7 @@ class TestVeiculos:
         assert data["message"] == "Veículos inseridos com sucesso"
         assert data["counter"] == 1
 
-    @patch("routes.veiculos.VeiculoService.update_veiculos")
+    @patch("services.veiculo_service.VeiculoService.update_veiculos")
     def test_update_route(self, mock_update, client, database):
         """Testa a rota PATCH /veiculos"""
         mock_update.return_value = 1
@@ -225,7 +223,7 @@ class TestVeiculos:
         assert data["message"] == "Veículos atualizados com sucesso"
         assert data["counter"] == 1
 
-    @patch("routes.veiculos.VeiculoService.delete_veiculos")
+    @patch("services.veiculo_service.VeiculoService.delete_veiculos")
     def test_delete_route(self, mock_delete, client, database):
         """Testa a rota DELETE /veiculos/<NUM_VEIC>"""
         mock_delete.return_value = 1

@@ -3,10 +3,11 @@ from typing import Any, Dict, List
 from sqlalchemy.orm import Session
 
 from classes.Operadora import Operadora
+from repositories.interfaces import IConsorcioRepository
 from repositories.models.operadora_model import OperadoraModel
 
 
-class ConsorcioRepository:
+class ConsorcioRepository(IConsorcioRepository):
     def __init__(self, db: Session):
         self.db = db
 
