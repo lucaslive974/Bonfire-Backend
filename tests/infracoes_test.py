@@ -17,7 +17,7 @@ class TestInfracoes:
         mock_extractor = MagicMock()
 
         def fake_extract(stream):
-            return {"rows_processed": 5}
+            return {"rows_processed": 5, "inserted": 5, "ignored": 0}
 
         mock_extractor.extract.side_effect = fake_extract
         mock_create.return_value = mock_extractor
@@ -48,7 +48,7 @@ class TestInfracoes:
         mock_extractor = MagicMock()
 
         def fake_extract(stream):
-            return {"rows_processed": 10}
+            return {"rows_processed": 10, "inserted": 10, "ignored": 0}
 
         mock_extractor.extract.side_effect = fake_extract
         mock_create.return_value = mock_extractor
