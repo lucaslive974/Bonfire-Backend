@@ -6,7 +6,7 @@ from core.cache import InMemoryCache
 from exceptions.CustomExceptions import CustomException
 from repositories.database import check_database_connection
 from routes import autoinfracao, consorcio, linha, recursos, veiculos
-from services.document_parser.factory import PyIngestionParserFactory
+from services.parsers.factory import PyIngestionParserFactory
 from utils.logger import http_logger, logger
 
 

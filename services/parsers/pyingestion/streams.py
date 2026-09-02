@@ -16,8 +16,7 @@ from exceptions.CustomExceptions import (
     ErrQuantityOfAtas,
     ErrReadingFile,
 )
-from services.document_parser.pubsub import SyncBatchProcessor
-from services.parsers import normalize_auto_infraction_id
+from services.parsers.pyingestion.pubsub import SyncBatchProcessor
 from services.recurso_service import RecursoService
 
 
@@ -411,3 +410,16 @@ class NoOpTransformStream(TransformStream[Any, Any]):
 
     def transform(self, data: Any) -> Any:
         return data
+
+
+def normalize_auto_infraction_id(ai: str) -> str:
+    if not ai:
+        return ai
+
+    if "-" in ai:
+        return ai
+
+    if ai[len(ai) - 1] == "-":
+        return ai
+
+    return f"{ai[:-1]}-{ai[-1]}"

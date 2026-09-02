@@ -153,7 +153,7 @@ class TestRecursoRoutes:
         mock_get.assert_called_once_with("2026-06-20")
 
     @patch(
-        "services.document_parser.factory.PyIngestionParserFactory.create_primeira_instancia_parser"
+        "services.parsers.factory.PyIngestionParserFactory.create_primeira_instancia_parser"
     )
     def test_post_primeira_instancia_route(
         self, mock_create: MagicMock, client: Any, database: Any
@@ -190,7 +190,7 @@ class TestRecursoRoutes:
         assert res_data["error"] == "Incomplete Data"
 
     @patch(
-        "services.document_parser.factory.PyIngestionParserFactory.create_segunda_instancia_parser"
+        "services.parsers.factory.PyIngestionParserFactory.create_segunda_instancia_parser"
     )
     def test_post_segunda_instancia_route(
         self, mock_create: MagicMock, client: Any, database: Any
