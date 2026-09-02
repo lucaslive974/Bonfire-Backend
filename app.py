@@ -5,7 +5,7 @@ from core.auth import Authenticator, KeyCloakAuthenticator
 from core.cache import InMemoryCache
 from exceptions.CustomExceptions import CustomException
 from routes import autoinfracao, consorcio, linha, recursos, veiculos
-from services.parsers.factory import PyIngestionParserFactory
+from services.parsers.factory import ParserFactory
 from utils.logger import http_logger, logger
 
 
@@ -28,11 +28,6 @@ class BonfireApp(Flask):
         # Initialize Application Cache
         self.extensions["cache"] = InMemoryCache()
 
-        # Initialize Document Parser Abstract Factory
-        if not hasattr(self, "extensions"):
-            self.extensions = {}
-        self.extensions["parser_factory"] = PyIngestionParserFactory()
-
         # Initialize Data Access and Domain Services
         from repositories.manager import SQLAlchemyRepositoryManager
         from services.factory import ServiceFactory
@@ -40,6 +35,13 @@ class BonfireApp(Flask):
         db_manager = SQLAlchemyRepositoryManager()
         self.extensions["db_manager"] = db_manager
         self.extensions["service_factory"] = ServiceFactory(db_manager)
+
+        # Initialize Document Parser Factory
+        if not hasattr(self, "extensions"):
+            self.extensions = {}
+        self.extensions["parser_factory"] = ParserFactory(
+            self.extensions["service_factory"]
+        )
 
         db_manager.check_connection()
         self._authController = KeyCloakAuthenticator(cache=self.extensions["cache"])

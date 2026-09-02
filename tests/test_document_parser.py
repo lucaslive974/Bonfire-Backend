@@ -5,7 +5,7 @@ import pytest
 from flask import Flask, current_app, jsonify, request
 
 from exceptions.CustomExceptions import CustomException
-from services.parsers.core import DocumentExtractor, DocumentParserFactory
+from services.parsers.core import DocumentExtractor
 from services.parsers.exceptions import DocumentParsingError
 
 
@@ -23,7 +23,7 @@ class MockExtractor(DocumentExtractor):
         }
 
 
-class MockParserFactory(DocumentParserFactory):
+class MockParserFactory:
     def create_primeira_instancia_parser(self) -> DocumentExtractor:
         return MockExtractor(succeed=True)
 

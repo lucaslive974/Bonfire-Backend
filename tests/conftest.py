@@ -27,11 +27,7 @@ def app():
     # Patch checkAuth method of BonfireApp to return None (bypass auth)
     with patch.object(BonfireApp, "checkAuth", return_value=None):
         application = BonfireApp("test_bonfire")
-        application.config.update(
-            {
-                "TESTING": True,
-            }
-        )
+        application.config.update({"TESTING": True})
 
         # Inject Fake Repositories and Services
         from services.factory import ServiceFactory
@@ -40,6 +36,13 @@ def app():
         fake_manager = FakeRepositoryManager()
         application.extensions["db_manager"] = fake_manager
         application.extensions["service_factory"] = ServiceFactory(fake_manager)
+
+        # Initialize Document Parser Factory
+        from services.parsers.factory import ParserFactory
+
+        application.extensions["parser_factory"] = ParserFactory(
+            application.extensions["service_factory"]
+        )
 
         yield application
 
@@ -51,5 +54,4 @@ def client(app):
 
 @pytest.fixture(scope="session")
 def database():
-    """Mock database fixture to satisfy tests referencing it."""
     return None
