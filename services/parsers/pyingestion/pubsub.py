@@ -1,4 +1,3 @@
-import time
 from typing import Any, Callable, List
 
 from utils.logger import logger
@@ -52,26 +51,13 @@ class SyncBatchProcessor:
             self.total_processed += batch_len
             self._buffer.clear()
         except Exception as e:
-            logger.warn(
-                f"Batch processing failed. Triggering backoff/retry. Error: {e}"
-            )
-            time.sleep(2)
-            try:
-                inserted = self.processor_func(self._buffer)
-                if inserted is None:
-                    inserted = 0
-                self.inserted_count += inserted
-                self.ignored_count += batch_len - inserted
-                self.total_processed += batch_len
-                self._buffer.clear()
-                logger.info("Batch processed and ACKed successfully on retry.")
-            except Exception as retry_err:
-                logger.error(f"Retry failed. Routing batch to DLQ. Error: {retry_err}")
-                self.total_processed += batch_len
-                self.ignored_count += batch_len
-                for item in self._buffer:
-                    self.dlq.route(item, str(retry_err))
-                self._buffer.clear()
+            logger.error(f"Batch processing failed. Routing batch to DLQ. Error: {e}")
+            self.total_processed += batch_len
+            self.ignored_count += batch_len
+            for item in self._buffer:
+                self.dlq.route(item, str(e))
+            self._buffer.clear()
+            raise e
 
     def stop(self):
         self._flush()
