@@ -7,7 +7,7 @@ import pytest
 
 @pytest.mark.usefixtures("app", "client", "database")
 class TestInfracoes:
-    @patch("services.parsers.factory.ParserFactory.create_infracoes_csv_parser")
+    @patch("core.parsers.factory.ParserFactory.create_infracoes_csv_parser")
     def test_post_csv_route(self, mock_create, client, database):
         """Testa se a rota POST /infracao/csv importa com sucesso"""
         from unittest.mock import MagicMock
@@ -36,7 +36,7 @@ class TestInfracoes:
         res_data = json.loads(response.data)
         assert res_data["message"] == "5 autos de infração importados"
 
-    @patch("services.parsers.factory.ParserFactory.create_infracoes_xls_parser")
+    @patch("core.parsers.factory.ParserFactory.create_infracoes_xls_parser")
     def test_post_xls_route(self, mock_create, client, database):
         """Testa se a rota POST /infracao/xls insere com sucesso"""
         from unittest.mock import MagicMock
