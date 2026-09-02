@@ -3,16 +3,18 @@ from unittest.mock import patch
 
 import pytest
 
-from app import BonfireApp
+# Use patch.dict to FORCE environment variables regardless of what is in the shell
+env_patcher = patch.dict(
+    os.environ,
+    {
+        "DB_PASSWORD": "test_password",
+        "KEYCLOAK_CLIENT_SECRET": "test_client_secret",
+        "KEYCLOAK_REALM_NAME": "test_realm",
+    },
+)
+env_patcher.start()
 
-# Set dummy environment variables to prevent Config from raising ErrMissingRequiredEnv during test imports
-for key, val in [
-    ("DB_PASSWORD", "test_password"),
-    ("KEYCLOAK_CLIENT_SECRET", "test_client_secret"),
-    ("KEYCLOAK_REALM_NAME", "test_realm"),
-]:
-    os.environ.setdefault(key, val)
-
+from app import BonfireApp  # noqa
 
 # Mock database connection check and Keycloak connection check during test imports
 patcher_db = patch("repositories.manager.SQLAlchemyRepositoryManager.check_connection")
