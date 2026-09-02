@@ -28,7 +28,7 @@ def test_infracoes_transform_accepts_brazilian_currency_and_missing_value():
             "DAT_OCOR_INFR": ["01/09/2026", "02/09/2026"],
             "HORA": ["10:30", "11:45"],
             "DAT_EMIS_NOTF": ["01/09/2026", np.nan],
-            "DAT_LIMT_RECU": ["15/09/2026", np.nan],
+            "DAT_LIMT_RECU": ["15/09/2026", "16/09/2026"],
             "VAL_INFR": ["R$ 1.498,91", np.nan],
         }
     )
@@ -43,7 +43,7 @@ def test_infracoes_transform_accepts_brazilian_currency_and_missing_value():
     assert records[0]["VAL_INFR"] == 1498.91
     assert records[1]["VAL_INFR"] is None
     assert records[1]["DAT_EMIS_NOTF"] is None
-    assert records[1]["DAT_LIMT_RECU"] is None
+    assert records[1]["DAT_LIMT_RECU"] == pd.Timestamp("2026-09-16")
 
 
 def test_recursos_docx_stream():
@@ -85,7 +85,7 @@ def test_recursos_docx_stream():
         assert recurso["NUM_AI"] == "345678-A"
         assert recurso["NOM_CONC"] == "Consórcio BH Leste"
         assert recurso["RESULTADO"] is False
-        assert recurso["DAT_PUBL"] == "2026-05-15 00:00:00"
+        assert recurso["DAT_PUBL"] == "2026-05-15"
 
     finally:
         if os.path.exists(doc_path):
@@ -104,6 +104,49 @@ def test_recursos_docx_stream_missing_date():
         with pytest.raises(ErrDataPubli):
             stream = RecursosDocxInputStream(first_instance=True)
             list(stream.read(doc_path))
+
+    finally:
+        if os.path.exists(doc_path):
+            os.remove(doc_path)
+
+from exceptions.CustomExceptions import ErrInvalidFileData
+
+def test_infracoes_transform_missing_ai():
+    data_frame = pd.DataFrame(
+        {
+            "NUM_AI": ["", "12346-A"],
+            "DAT_OCOR_INFR": ["01/09/2026", "02/09/2026"],
+            "DAT_LIMT_RECU": ["15/09/2026", "16/09/2026"],
+        }
+    )
+    stream = InfracoesTransformStream(
+        datetime_format="%d/%m/%Y %H:%M",
+        date_format="%d/%m/%Y",
+        convert_val_infr=True,
+    )
+    with pytest.raises(ErrInvalidFileData) as excinfo:
+        stream.transform(data_frame)
+    assert "NUM_AI" in excinfo.value.friendly_message
+
+
+def test_recursos_docx_stream_invalid_columns():
+    with tempfile.NamedTemporaryFile(suffix=".docx", delete=False) as temp_file:
+        doc_path = temp_file.name
+
+    try:
+        doc = Document()
+        doc.add_paragraph("PUBLICADO NO DIARIO OFICIAL DO MUNICIPIO DE BELO HORIZONTE EM 15/05/2026")
+        doc.add_paragraph("ATA DA 5ª SESSÃO ORDINÁRIA")
+        table = doc.add_table(rows=2, cols=3)  # Only 3 cols, should be 4
+        table.cell(0, 0).text = "RECURSO"
+        table.cell(1, 0).text = "123/2026"
+        table.cell(1, 1).text = "345678A"
+        doc.save(doc_path)
+
+        with pytest.raises(ErrInvalidFileData) as excinfo:
+            stream = RecursosDocxInputStream(first_instance=True)
+            list(stream.read(doc_path))
+        assert "4 eram esperadas" in excinfo.value.friendly_message
 
     finally:
         if os.path.exists(doc_path):
