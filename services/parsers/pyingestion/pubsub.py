@@ -57,6 +57,20 @@ class SyncBatchProcessor:
             for item in self._buffer:
                 self.dlq.route(item, str(e))
             self._buffer.clear()
+
+            error_msg = str(e)
+            if "Unconsumed column names" in error_msg:
+                from exceptions.CustomExceptions import ErrInvalidFileData
+
+                colunas_extras = error_msg.split("Unconsumed column names:", 1)[
+                    -1
+                ].strip()
+                friendly_message = (
+                    "O arquivo enviado possui formato estrutural inválido. "
+                    f"Colunas desconhecidas não pertencem à tabela: {colunas_extras}."
+                )
+                raise ErrInvalidFileData(friendly_message=friendly_message)
+
             raise e
 
     def stop(self):

@@ -196,6 +196,4 @@ class ErrInvalidFileData(CustomException):
         status: int = 400,
         error: str = "Invalid File Data",
     ):
-        super().__init__(
-            "Erro de formatação/dado no arquivo", status, error, friendly_message
-        )
+        super().__init__(friendly_message, status, error, friendly_message)
