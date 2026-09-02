@@ -1,29 +1,29 @@
 from typing import Any, Dict, List
 
 from exceptions.CustomExceptions import ErrNullInsert
-from repositories.database import get_db
-from repositories.recurso_repository import RecursoRepository
+from repositories.interfaces import IRepositoryManager
 
 
 class RecursoService:
     """Serviço de domínio para casos de uso de Recursos de 1ª e 2ª instância."""
 
-    @staticmethod
-    def get_primeira_instancia(date: Any, ata: Any) -> List[Dict[str, Any]]:
+    def __init__(self, db_manager: IRepositoryManager):
+        self._db_manager = db_manager
+
+    def get_primeira_instancia(self, date: Any, ata: Any) -> List[Dict[str, Any]]:
         """Retorna os recursos de primeira instância."""
-        with get_db() as db:
-            repo = RecursoRepository(db)
+        with self._db_manager.session() as session:
+            repo = session.get_recurso_repository()
             return repo.get_primeira_instancia(date, ata)
 
-    @staticmethod
-    def get_segunda_instancia(date: Any) -> List[Dict[str, Any]]:
+    def get_segunda_instancia(self, date: Any) -> List[Dict[str, Any]]:
         """Retorna os recursos de segunda instância."""
-        with get_db() as db:
-            repo = RecursoRepository(db)
+        with self._db_manager.session() as session:
+            repo = session.get_recurso_repository()
             return repo.get_segunda_instancia(date)
 
-    @staticmethod
     def insert_primeira_instancia(
+        self,
         recursos_primeira_instancia: List[Dict[str, Any]] | None,
     ) -> int:
         """Insere no banco de dados uma lista de recursos de primeira instância."""
@@ -32,13 +32,13 @@ class RecursoService:
                 "Lista de recursos vazia, nenhum registro inserido", 400
             )
 
-        with get_db() as db:
-            repo = RecursoRepository(db)
+        with self._db_manager.session() as session:
+            repo = session.get_recurso_repository()
             count = repo.insert_primeira_instancia(recursos_primeira_instancia)
             return count
 
-    @staticmethod
     def insert_segunda_instancia(
+        self,
         recursos_segunda_instancia: List[Dict[str, Any]] | None,
     ) -> int:
         """Insere no banco de dados uma lista de recursos de segunda instância."""
@@ -47,7 +47,7 @@ class RecursoService:
                 "Lista de recursos vazia, nenhum registro inserido", 400
             )
 
-        with get_db() as db:
-            repo = RecursoRepository(db)
+        with self._db_manager.session() as session:
+            repo = session.get_recurso_repository()
             count = repo.insert_segunda_instancia(recursos_segunda_instancia)
             return count

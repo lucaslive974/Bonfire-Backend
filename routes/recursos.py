@@ -1,7 +1,6 @@
 from flask import Blueprint, current_app, jsonify, request
 
 from exceptions.CustomExceptions import ErrIncompleteData
-from services.recurso_service import RecursoService
 
 RecursoPrimeiraInstanciaBlueprint = Blueprint("recurso1", __name__)
 RecuroSegundaInstanciaBlueprint = Blueprint("recurso2", __name__)
@@ -53,14 +52,23 @@ def post_recursos_segunda_instancia():
     ), 200
 
 
+def _get_service():
+    factory = current_app.extensions.get("service_factory")
+    if not factory:
+        raise ErrIncompleteData("ServiceFactory not configured", 500)
+    return factory.get_recurso_service()
+
+
 @RecursoPrimeiraInstanciaBlueprint.route("/recurso/primeiraInstancia", methods=["GET"])
 def get_recursos_primeira_instancia():
     date = request.args.get("date")
     ata = request.args.get("ata")
-    return jsonify({"recurses": RecursoService.get_primeira_instancia(date, ata)}), 200
+    service = _get_service()
+    return jsonify({"recurses": service.get_primeira_instancia(date, ata)}), 200
 
 
 @RecuroSegundaInstanciaBlueprint.route("/recurso/segundaInstancia", methods=["GET"])
 def get_recursos_segunda_instancia():
     date = request.args.get("date")
-    return jsonify({"recurses": RecursoService.get_segunda_instancia(date)}), 200
+    service = _get_service()
+    return jsonify({"recurses": service.get_segunda_instancia(date)}), 200

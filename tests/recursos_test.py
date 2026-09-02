@@ -48,89 +48,73 @@ def test_recurso_segunda_instancia_model():
     }
 
 
-@patch("services.recurso_service.get_db")
-@patch("services.recurso_service.RecursoRepository")
-def test_service_get_primeira_instancia(
-    mock_repo_cls: MagicMock, mock_get_db: MagicMock
-):
-    mock_db = MagicMock()
-    mock_get_db.return_value.__enter__.return_value = mock_db
-    mock_repo = MagicMock()
-    mock_repo_cls.return_value = mock_repo
+def test_service_get_primeira_instancia():
+    mock_db_manager = MagicMock()
+    mock_session = mock_db_manager.session.return_value.__enter__.return_value
+    mock_repo = mock_session.get_recurso_repository.return_value
     mock_repo.get_primeira_instancia.return_value = [{"recurso": "123"}]
 
-    res = RecursoService.get_primeira_instancia("2026-05-15", 5)
+    service = RecursoService(mock_db_manager)
+    res = service.get_primeira_instancia("2026-05-15", 5)
     assert res == [{"recurso": "123"}]
-    mock_repo_cls.assert_called_once_with(mock_db)
     mock_repo.get_primeira_instancia.assert_called_once_with("2026-05-15", 5)
 
 
-@patch("services.recurso_service.get_db")
-@patch("services.recurso_service.RecursoRepository")
-def test_service_get_segunda_instancia(
-    mock_repo_cls: MagicMock, mock_get_db: MagicMock
-):
-    mock_db = MagicMock()
-    mock_get_db.return_value.__enter__.return_value = mock_db
-    mock_repo = MagicMock()
-    mock_repo_cls.return_value = mock_repo
+def test_service_get_segunda_instancia():
+    mock_db_manager = MagicMock()
+    mock_session = mock_db_manager.session.return_value.__enter__.return_value
+    mock_repo = mock_session.get_recurso_repository.return_value
     mock_repo.get_segunda_instancia.return_value = [{"recurso": "321"}]
 
-    res = RecursoService.get_segunda_instancia("2026-06-20")
+    service = RecursoService(mock_db_manager)
+    res = service.get_segunda_instancia("2026-06-20")
     assert res == [{"recurso": "321"}]
-    mock_repo_cls.assert_called_once_with(mock_db)
     mock_repo.get_segunda_instancia.assert_called_once_with("2026-06-20")
 
 
-@patch("services.recurso_service.get_db")
-@patch("services.recurso_service.RecursoRepository")
-def test_service_insert_primeira_instancia(
-    mock_repo_cls: MagicMock, mock_get_db: MagicMock
-):
-    mock_db = MagicMock()
-    mock_get_db.return_value.__enter__.return_value = mock_db
-    mock_repo = MagicMock()
-    mock_repo_cls.return_value = mock_repo
+def test_service_insert_primeira_instancia():
+    mock_db_manager = MagicMock()
+    mock_session = mock_db_manager.session.return_value.__enter__.return_value
+    mock_repo = mock_session.get_recurso_repository.return_value
     mock_repo.insert_primeira_instancia.return_value = 10
 
     payload = [{"NUM_RECURSO": "123"}]
-    res = RecursoService.insert_primeira_instancia(payload)
+    service = RecursoService(mock_db_manager)
+    res = service.insert_primeira_instancia(payload)
     assert res == 10
-    mock_repo_cls.assert_called_once_with(mock_db)
     mock_repo.insert_primeira_instancia.assert_called_once_with(payload)
 
 
 def test_service_insert_primeira_instancia_null():
+    mock_db_manager = MagicMock()
+    service = RecursoService(mock_db_manager)
     with pytest.raises(ErrNullInsert):
-        RecursoService.insert_primeira_instancia(None)
+        service.insert_primeira_instancia(None)
 
 
-@patch("services.recurso_service.get_db")
-@patch("services.recurso_service.RecursoRepository")
-def test_service_insert_segunda_instancia(
-    mock_repo_cls: MagicMock, mock_get_db: MagicMock
-):
-    mock_db = MagicMock()
-    mock_get_db.return_value.__enter__.return_value = mock_db
-    mock_repo = MagicMock()
-    mock_repo_cls.return_value = mock_repo
+def test_service_insert_segunda_instancia():
+    mock_db_manager = MagicMock()
+    mock_session = mock_db_manager.session.return_value.__enter__.return_value
+    mock_repo = mock_session.get_recurso_repository.return_value
     mock_repo.insert_segunda_instancia.return_value = 20
 
     payload = [{"NUM_RECURSO": "321"}]
-    res = RecursoService.insert_segunda_instancia(payload)
+    service = RecursoService(mock_db_manager)
+    res = service.insert_segunda_instancia(payload)
     assert res == 20
-    mock_repo_cls.assert_called_once_with(mock_db)
     mock_repo.insert_segunda_instancia.assert_called_once_with(payload)
 
 
 def test_service_insert_segunda_instancia_null():
+    mock_db_manager = MagicMock()
+    service = RecursoService(mock_db_manager)
     with pytest.raises(ErrNullInsert):
-        RecursoService.insert_segunda_instancia(None)
+        service.insert_segunda_instancia(None)
 
 
 @pytest.mark.usefixtures("app", "client", "database")
 class TestRecursoRoutes:
-    @patch("routes.recursos.RecursoService.get_primeira_instancia")
+    @patch("services.recurso_service.RecursoService.get_primeira_instancia")
     def test_get_primeira_instancia_route(
         self, mock_get: MagicMock, client: Any, database: Any
     ):
@@ -141,7 +125,7 @@ class TestRecursoRoutes:
         assert data == {"recurses": [{"NUM_RECURSO": "123"}]}
         mock_get.assert_called_once_with("2026-05-15", "5")
 
-    @patch("routes.recursos.RecursoService.get_segunda_instancia")
+    @patch("services.recurso_service.RecursoService.get_segunda_instancia")
     def test_get_segunda_instancia_route(
         self, mock_get: MagicMock, client: Any, database: Any
     ):

@@ -1,40 +1,38 @@
 from typing import Any, Dict, List
 
-from repositories.database import get_db
-from repositories.linha_repository import LinhaRepository
+from repositories.interfaces import IRepositoryManager
 
 
 class LinhaService:
     """Serviço de domínio para casos de uso de Linhas."""
 
-    @staticmethod
-    def get_linha() -> List[Dict[str, Any]]:
+    def __init__(self, db_manager: IRepositoryManager):
+        self._db_manager = db_manager
+
+    def get_linha(self) -> List[Dict[str, Any]]:
         """Recupera os dados das linhas no banco de dados."""
-        with get_db() as db:
-            repo = LinhaRepository(db)
+        with self._db_manager.session() as session:
+            repo = session.get_linha_repository()
             linhas = repo.get_all()
             return [linha.as_dict() for linha in linhas]
 
-    @staticmethod
-    def insert_linha(line_data: List[Dict[str, Any]]) -> int:
+    def insert_linha(self, line_data: List[Dict[str, Any]]) -> int:
         """Insere uma lista de linhas no banco de dados."""
-        with get_db() as db:
-            repo = LinhaRepository(db)
+        with self._db_manager.session() as session:
+            repo = session.get_linha_repository()
             count = repo.insert_bulk(line_data)
             return count
 
-    @staticmethod
-    def update_linha(line_data: List[Dict[str, Any]]) -> int:
+    def update_linha(self, line_data: List[Dict[str, Any]]) -> int:
         """Realiza atualização de uma lista de linhas no banco de dados."""
-        with get_db() as db:
-            repo = LinhaRepository(db)
+        with self._db_manager.session() as session:
+            repo = session.get_linha_repository()
             count = repo.update_bulk(line_data)
             return count
 
-    @staticmethod
-    def delete_linha(cod_linh: str) -> int:
+    def delete_linha(self, cod_linh: str) -> int:
         """Realiza a exclusão de uma linha no banco de dados."""
-        with get_db() as db:
-            repo = LinhaRepository(db)
+        with self._db_manager.session() as session:
+            repo = session.get_linha_repository()
             count = repo.delete(cod_linh)
             return count
