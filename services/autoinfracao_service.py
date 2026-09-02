@@ -3,23 +3,23 @@ from typing import Any, Dict, List, Tuple
 import pandas as pd
 
 from exceptions.CustomExceptions import ErrReadingFile
-from repositories.autoinfracao_repository import AutoInfracaoRepository
-from repositories.database import get_db
+from repositories.interfaces import IRepositoryManager
 
 
 class AutoInfracaoService:
     """Serviço de domínio para casos de uso de Autos de Infração."""
 
-    @staticmethod
-    def get_infracoes(date: Any, ai: Any) -> List[Dict[str, Any]]:
+    def __init__(self, db_manager: IRepositoryManager):
+        self._db_manager = db_manager
+
+    def get_infracoes(self, date: Any, ai: Any) -> List[Dict[str, Any]]:
         """Recupera os autos de infração."""
-        with get_db() as db:
-            repo = AutoInfracaoRepository(db)
+        with self._db_manager.session() as session:
+            repo = session.get_autoinfracao_repository()
             infracoes = repo.get_infracoes(date, ai)
             return [inf.as_dict() for inf in infracoes]
 
-    @staticmethod
-    def check_infracoes(csv: Any) -> Tuple[int, int, List[str]]:
+    def check_infracoes(self, csv: Any) -> Tuple[int, int, List[str]]:
         """Realiza a verificação dos autos de infração no banco de dados."""
         try:
             data_frame = pd.read_csv(csv, header=0, delimiter=";")
@@ -27,7 +27,7 @@ class AutoInfracaoService:
         except Exception as e:
             raise ErrReadingFile(f"Erro ao ler o arquivo CSV. {e}", 500)
 
-        with get_db() as db:
-            repo = AutoInfracaoRepository(db)
+        with self._db_manager.session() as session:
+            repo = session.get_autoinfracao_repository()
             rows_counter, counter, rows_not_present = repo.check_presence(values)
             return rows_counter, counter, rows_not_present

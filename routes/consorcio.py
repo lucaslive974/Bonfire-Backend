@@ -1,16 +1,24 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, current_app, jsonify, request
 
-from services.consorcio_service import ConsorcioService
+from exceptions.CustomExceptions import ErrIncompleteData
 from utils.validators import checkKeysInJson
 
 consorcioBlueprint = Blueprint("consorcio", __name__)
 keys_to_check = ["ID", "NOME", "CONCESSIONARIA"]
 
 
+def _get_service():
+    factory = current_app.extensions.get("service_factory")
+    if not factory:
+        raise ErrIncompleteData("ServiceFactory not configured", 500)
+    return factory.get_consorcio_service()
+
+
 @consorcioBlueprint.route("/consorcio", methods=["GET"])
 def execute_route_get_consorcio():
     """Rota para buscar todos os consórcios"""
-    response = ConsorcioService.get_consorcios()
+    service = _get_service()
+    response = service.get_consorcios()
     return jsonify({"consorcios": response}), 200
 
 
@@ -19,7 +27,8 @@ def execute_route_post_consorcio():
     """Rota para inserir novos consórcios"""
     jsonData = request.get_json()
     checkKeysInJson(jsonData, keys_to_check, "consorcio")
-    response = ConsorcioService.insert_consorcios(jsonData)
+    service = _get_service()
+    response = service.insert_consorcios(jsonData)
     return jsonify(
         {"message": "Consórcios inseridos com sucesso", "counter": response}
     ), 201
@@ -30,7 +39,8 @@ def execute_route_patch_consorcio():
     """Rota para atualizar parcialmente consórcios"""
     jsonData = request.get_json()
     checkKeysInJson(jsonData, keys_to_check, "consorcio")
-    response = ConsorcioService.update_consorcios(jsonData)
+    service = _get_service()
+    response = service.update_consorcios(jsonData)
     return jsonify(
         {"message": "Consórcios atualizados com sucesso", "counter": response}
     ), 200
@@ -41,7 +51,8 @@ def execute_route_put_consorcio():
     """Rota para atualizar consórcios (PUT)"""
     jsonData = request.get_json()
     checkKeysInJson(jsonData, keys_to_check, "consorcio")
-    response = ConsorcioService.update_consorcios(jsonData)
+    service = _get_service()
+    response = service.update_consorcios(jsonData)
     return jsonify(
         {"message": "Consórcios atualizados com sucesso", "counter": response}
     ), 200
@@ -50,7 +61,8 @@ def execute_route_put_consorcio():
 @consorcioBlueprint.route("/consorcio/<string:id_consorcio>", methods=["DELETE"])
 def execute_route_delete_consorcio(id_consorcio):
     """Rota para deletar um consórcio pelo ID"""
-    response = ConsorcioService.delete_consorcio(id_consorcio)
+    service = _get_service()
+    response = service.delete_consorcio(id_consorcio)
     return jsonify(
         {"message": "Consórcio deletado com sucesso", "counter": response}
     ), 200

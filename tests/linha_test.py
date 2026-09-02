@@ -143,13 +143,10 @@ def test_linha_repository_update_bulk_reactivate():
     assert mock_model.DAT_BAIX is None
 
 
-@patch("services.linha_service.get_db")
-@patch("services.linha_service.LinhaRepository")
-def test_service_get_linha(mock_repo_cls, mock_get_db):
-    mock_db = MagicMock()
-    mock_get_db.return_value.__enter__.return_value = mock_db
-    mock_repo = MagicMock()
-    mock_repo_cls.return_value = mock_repo
+def test_service_get_linha():
+    mock_db_manager = MagicMock()
+    mock_session = mock_db_manager.session.return_value.__enter__.return_value
+    mock_repo = mock_session.get_linha_repository.return_value
 
     mock_linha = Linha(
         COD_LINH="61",
@@ -160,7 +157,8 @@ def test_service_get_linha(mock_repo_cls, mock_get_db):
     )
     mock_repo.get_all.return_value = [mock_linha]
 
-    res = LinhaService.get_linha()
+    service = LinhaService(mock_db_manager)
+    res = service.get_linha()
     assert len(res) == 1
     assert res[0]["COD_LINH"] == "61"
     assert res[0]["DAT_BAIX"] == "2026-08-28T12:00:00"
@@ -168,7 +166,7 @@ def test_service_get_linha(mock_repo_cls, mock_get_db):
 
 @pytest.mark.usefixtures("app", "client", "database")
 class TestLinha:
-    @patch("routes.linha.LinhaService.get_linha")
+    @patch("services.linha_service.LinhaService.get_linha")
     def test_get_route(self, mock_get, client, database):
         """Testa se a rota GET /linha retorna a lista correta de linhas"""
         mock_get.return_value = [
@@ -189,7 +187,7 @@ class TestLinha:
         assert data["linha"][0]["COD_LINH"] == "61"
         assert data["linha"][0]["DAT_BAIX"] is None
 
-    @patch("routes.linha.LinhaService.get_linha")
+    @patch("services.linha_service.LinhaService.get_linha")
     def test_get_route_with_data_baixa(self, mock_get, client, database):
         """Testa se a rota GET /linha retorna a lista com DAT_BAIX preenchido"""
         mock_get.return_value = [
@@ -210,7 +208,7 @@ class TestLinha:
         assert data["linha"][0]["COD_LINH"] == "62"
         assert data["linha"][0]["DAT_BAIX"] == "2026-08-28T11:00:00"
 
-    @patch("routes.linha.LinhaService.insert_linha")
+    @patch("services.linha_service.LinhaService.insert_linha")
     def test_insert_route(self, mock_insert, client, database):
         """Testa se a rota POST /linha insere linhas com sucesso"""
         mock_insert.return_value = 1
@@ -230,7 +228,7 @@ class TestLinha:
         assert data["message"] == "linhas inseridas com sucesso"
         assert data["counter"] == 1
 
-    @patch("routes.linha.LinhaService.update_linha")
+    @patch("services.linha_service.LinhaService.update_linha")
     def test_update_route(self, mock_update, client, database):
         """Testa se a rota PATCH /linha atualiza linhas com sucesso"""
         mock_update.return_value = 1
@@ -250,7 +248,7 @@ class TestLinha:
         assert data["message"] == "linha atualizada com sucesso"
         assert data["counter"] == 1
 
-    @patch("routes.linha.LinhaService.delete_linha")
+    @patch("services.linha_service.LinhaService.delete_linha")
     def test_delete_route(self, mock_delete, client, database):
         """Testa se a rota DELETE /linha/<COD_LINH> deleta linhas com sucesso"""
         mock_delete.return_value = 1

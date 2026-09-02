@@ -15,7 +15,7 @@ for key, val in [
 
 
 # Mock database connection check and Keycloak connection check during test imports
-patcher_db = patch("repositories.database.check_database_connection")
+patcher_db = patch("repositories.manager.SQLAlchemyRepositoryManager.check_connection")
 patcher_kc_conn = patch("core.auth.authenticator.KeyCloakAuthenticator.checkConnection")
 
 patcher_db.start()
@@ -32,6 +32,15 @@ def app():
                 "TESTING": True,
             }
         )
+
+        # Inject Fake Repositories and Services
+        from services.factory import ServiceFactory
+        from tests.fakes import FakeRepositoryManager
+
+        fake_manager = FakeRepositoryManager()
+        application.extensions["db_manager"] = fake_manager
+        application.extensions["service_factory"] = ServiceFactory(fake_manager)
+
         yield application
 
 

@@ -3,10 +3,11 @@ from typing import Any, Dict, List
 from sqlalchemy.orm import Session
 
 from classes.Linha import Linha
+from repositories.interfaces import ILinhaRepository
 from repositories.models.linha_model import LinhaModel
 
 
-class LinhaRepository:
+class LinhaRepository(ILinhaRepository):
     def __init__(self, db: Session):
         self.db = db
 
