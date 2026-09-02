@@ -4,9 +4,9 @@ from typing import BinaryIO
 import pytest
 from flask import Flask, current_app, jsonify, request
 
-from exceptions.CustomExceptions import CustomException
 from core.parsers.core import DocumentExtractor
 from core.parsers.exceptions import DocumentParsingError
+from exceptions.CustomExceptions import CustomException
 
 
 class MockExtractor(DocumentExtractor):

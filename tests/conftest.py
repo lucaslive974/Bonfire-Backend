@@ -32,7 +32,6 @@ def app():
         application.config.update({"TESTING": True})
 
         # Inject Fake Repositories and Services
-        from services.factory import ServiceFactory
         from tests.fakes import FakeRepositoryManager
 
         fake_manager = FakeRepositoryManager()

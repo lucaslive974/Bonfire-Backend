@@ -9,6 +9,7 @@ from docx import Document
 from docx.table import Table
 from pyingestion import ExtractionSession, InputStream, OutputStream, TransformStream
 
+from core.parsers.pyingestion.pubsub import SyncBatchProcessor
 from exceptions.CustomExceptions import (
     ErrDataPubli,
     ErrIncorrectInstance,
@@ -16,7 +17,6 @@ from exceptions.CustomExceptions import (
     ErrQuantityOfAtas,
     ErrReadingFile,
 )
-from core.parsers.pyingestion.pubsub import SyncBatchProcessor
 
 # ==========================================
 # WRITE STREAMS (Output)
@@ -24,9 +24,7 @@ from core.parsers.pyingestion.pubsub import SyncBatchProcessor
 
 
 class BonfireRecursoWriteStream(OutputStream[Any]):
-    def __init__(
-        self, db_manager, first_instance: bool = True, batch_size: int = 100
-    ):
+    def __init__(self, db_manager, first_instance: bool = True, batch_size: int = 100):
         self.db_manager = db_manager
         self.first_instance = first_instance
         self.processor = SyncBatchProcessor(self._process_batch, batch_size=batch_size)

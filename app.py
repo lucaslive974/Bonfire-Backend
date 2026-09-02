@@ -3,9 +3,9 @@ from flask_cors import CORS
 
 from core.auth import Authenticator, KeyCloakAuthenticator
 from core.cache import InMemoryCache
+from core.parsers.factory import ParserFactory
 from exceptions.CustomExceptions import CustomException
 from routes import autoinfracao, consorcio, linha, recursos, veiculos
-from core.parsers.factory import ParserFactory
 from utils.logger import http_logger, logger
 
 

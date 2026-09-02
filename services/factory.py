@@ -5,6 +5,7 @@ from services.linha_service import LinhaService
 from services.recurso_service import RecursoService
 from services.veiculo_service import VeiculoService
 
+
 class ServiceFactory:
     def __init__(self, db_manager: IRepositoryManager, parser_factory=None):
         self._db_manager = db_manager

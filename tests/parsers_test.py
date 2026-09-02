@@ -6,12 +6,12 @@ import pandas as pd
 import pytest
 from docx import Document
 
-from exceptions.CustomExceptions import ErrDataPubli, ErrInvalidFileData
 from core.parsers.pyingestion.streams import (
     InfracoesTransformStream,
     RecursosDocxInputStream,
     normalize_auto_infraction_id,
 )
+from exceptions.CustomExceptions import ErrDataPubli, ErrInvalidFileData
 
 
 def test_normalize_auto_infraction_id():
