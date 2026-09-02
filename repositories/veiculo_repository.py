@@ -46,18 +46,47 @@ class VeiculoRepository:
         return True
 
     def insert_bulk(self, veiculos_data: List[Dict[str, Any]]) -> int:
+        from exceptions.CustomExceptions import ErrInsertData
+
+        novos_num_veic = []
+        for data in veiculos_data:
+            if data.get("NUM_VEIC") is not None:
+                try:
+                    novos_num_veic.append(int(data.get("NUM_VEIC")))
+                except ValueError, TypeError:
+                    continue
+
+        if novos_num_veic:
+            existentes = (
+                self.db.query(VeiculoModel.NUM_VEIC)
+                .filter(VeiculoModel.NUM_VEIC.in_(novos_num_veic))
+                .all()
+            )
+            if existentes:
+                veiculos_existentes = ", ".join(str(e[0]) for e in existentes)
+                raise ErrInsertData(
+                    message="Veículo já existe",
+                    status=409,
+                    error="Conflict",
+                    friendly_message=f"Os seguintes veículos já existem e não podem ser sobrescritos: {veiculos_existentes}",
+                )
+
         counter = 0
         for data in veiculos_data:
             num_veic = data.get("NUM_VEIC")
             if num_veic is not None:
+                try:
+                    num_veic_int = int(num_veic)
+                except ValueError, TypeError:
+                    continue
                 veiculo = Veiculo(
-                    NUM_VEIC=int(num_veic),
+                    NUM_VEIC=num_veic_int,
                     IDN_PLAC_VEIC=data.get("IDN_PLAC_VEIC"),
                     VEIC_ATIV_EMPR=bool(data.get("VEIC_ATIV_EMPR", True)),
                     DAT_BAIX=data.get("DAT_BAIX"),
                 )
                 model = self._to_model(veiculo)
-                self.db.merge(model)
+                self.db.add(model)
                 counter += 1
         return counter
 

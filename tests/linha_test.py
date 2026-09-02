@@ -48,6 +48,8 @@ def test_linha_model_with_dat_baix():
 
 def test_linha_repository_insert_bulk():
     mock_db = MagicMock()
+    # Mock to ensure the exists check returns empty (no linhas found)
+    mock_db.query.return_value.filter.return_value.all.return_value = []
     repo = LinhaRepository(mock_db)
 
     payload = [
@@ -68,7 +70,7 @@ def test_linha_repository_insert_bulk():
 
     count = repo.insert_bulk(payload)
     assert count == 2
-    assert mock_db.merge.call_count == 2
+    assert mock_db.add.call_count == 2
 
 
 def test_linha_repository_update_bulk_deactivate():
@@ -255,3 +257,29 @@ class TestLinha:
         data = response.get_json()
         assert data["message"] == "linha deletada com sucesso"
         assert data["counter"] == 1
+
+
+def test_linha_repository_insert_bulk_already_exists():
+    from exceptions.CustomExceptions import ErrInsertData
+
+    mock_db = MagicMock()
+    # Mock to ensure the exists check returns some linhas
+    mock_db.query.return_value.filter.return_value.all.return_value = [("61",)]
+    repo = LinhaRepository(mock_db)
+
+    payload = [
+        {
+            "COD_LINH": "61",
+            "ID_OPERADORA": 107,
+            "COMPARTILHADA": True,
+            "LINH_ATIV_EMPR": True,
+        }
+    ]
+
+    with pytest.raises(ErrInsertData) as exc_info:
+        repo.insert_bulk(payload)
+
+    assert exc_info.value.status == 409
+    assert (
+        "já existem e não podem ser sobrescritas: 61" in exc_info.value.friendly_message
+    )
