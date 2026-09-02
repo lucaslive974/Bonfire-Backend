@@ -42,12 +42,34 @@ class LinhaRepository:
 
     def insert_bulk(self, linhas_data: List[Dict[str, Any]]) -> int:
         from exceptions.CustomExceptions import ErrInsertData
+        from repositories.models.operadora_model import OperadoraModel
 
         novos_cod_linh = []
+        operadoras_ids = set()
         for data in linhas_data:
             cod = data.get("COD_LINH")
             if cod is not None:
                 novos_cod_linh.append(str(cod))
+            op_id = data.get("ID_OPERADORA")
+            if op_id is not None:
+                operadoras_ids.add(op_id)
+
+        if operadoras_ids:
+            existentes_operadoras = (
+                self.db.query(OperadoraModel.ID)
+                .filter(OperadoraModel.ID.in_(operadoras_ids))
+                .all()
+            )
+            existentes_ids = {e[0] for e in existentes_operadoras}
+            faltantes = operadoras_ids - existentes_ids
+            if faltantes:
+                faltantes_str = ", ".join(str(f) for f in faltantes)
+                raise ErrInsertData(
+                    message="Operadora inexistente",
+                    status=400,
+                    error="Bad Request",
+                    friendly_message=f"Os seguintes consórcios/operadoras não existem: {faltantes_str}",
+                )
 
         if novos_cod_linh:
             existentes = (
@@ -81,6 +103,32 @@ class LinhaRepository:
         return counter
 
     def update_bulk(self, linhas_data: List[Dict[str, Any]]) -> int:
+        from exceptions.CustomExceptions import ErrUpdateData
+        from repositories.models.operadora_model import OperadoraModel
+
+        operadoras_ids = set()
+        for data in linhas_data:
+            op_id = data.get("ID_OPERADORA")
+            if op_id is not None:
+                operadoras_ids.add(op_id)
+
+        if operadoras_ids:
+            existentes_operadoras = (
+                self.db.query(OperadoraModel.ID)
+                .filter(OperadoraModel.ID.in_(operadoras_ids))
+                .all()
+            )
+            existentes_ids = {e[0] for e in existentes_operadoras}
+            faltantes = operadoras_ids - existentes_ids
+            if faltantes:
+                faltantes_str = ", ".join(str(f) for f in faltantes)
+                raise ErrUpdateData(
+                    message="Operadora inexistente",
+                    status=400,
+                    error="Bad Request",
+                    friendly_message=f"Não é possível atualizar. Os seguintes consórcios/operadoras não existem: {faltantes_str}",
+                )
+
         counter = 0
         for data in linhas_data:
             cod_linh = data.get("COD_LINH")
