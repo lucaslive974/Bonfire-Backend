@@ -17,7 +17,6 @@ from exceptions.CustomExceptions import (
     ErrReadingFile,
 )
 from services.parsers.pyingestion.pubsub import SyncBatchProcessor
-from services.recurso_service import RecursoService
 
 # ==========================================
 # WRITE STREAMS (Output)
@@ -25,7 +24,10 @@ from services.recurso_service import RecursoService
 
 
 class BonfireRecursoWriteStream(OutputStream[Any]):
-    def __init__(self, first_instance: bool = True, batch_size: int = 100):
+    def __init__(
+        self, service_factory, first_instance: bool = True, batch_size: int = 100
+    ):
+        self.service_factory = service_factory
         self.first_instance = first_instance
         self.processor = SyncBatchProcessor(self._process_batch, batch_size=batch_size)
         self.processor.start()
@@ -39,17 +41,19 @@ class BonfireRecursoWriteStream(OutputStream[Any]):
             self.processor.publish(item)
 
     def _process_batch(self, batch: List[Any]) -> int:
+        service = self.service_factory.get_recurso_service()
         if self.first_instance:
-            return RecursoService.insert_primeira_instancia(batch)
+            return service.insert_primeira_instancia(batch)
         else:
-            return RecursoService.insert_segunda_instancia(batch)
+            return service.insert_segunda_instancia(batch)
 
     def flush(self) -> None:
         self.processor.stop()
 
 
 class BonfireInfracaoWriteStream(OutputStream[Any]):
-    def __init__(self, ignore: bool = False, batch_size: int = 1000):
+    def __init__(self, service_factory, ignore: bool = False, batch_size: int = 1000):
+        self.service_factory = service_factory
         self.ignore = ignore
         self.processor = SyncBatchProcessor(self._process_batch, batch_size=batch_size)
         self.processor.start()
@@ -63,11 +67,9 @@ class BonfireInfracaoWriteStream(OutputStream[Any]):
             self.processor.publish(item)
 
     def _process_batch(self, batch: List[Any]) -> int:
-        from repositories.autoinfracao_repository import AutoInfracaoRepository
-        from repositories.database import get_db
-
-        with get_db() as db:
-            repo = AutoInfracaoRepository(db)
+        db_manager = self.service_factory._db_manager
+        with db_manager.session() as session:
+            repo = session.get_autoinfracao_repository()
             return repo.insert_bulk_rows(batch, ignore=self.ignore)
 
     def flush(self) -> None:

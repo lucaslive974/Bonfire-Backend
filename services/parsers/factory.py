@@ -1,4 +1,4 @@
-from services.parsers.core import DocumentExtractor, DocumentParserFactory
+from services.parsers.core import DocumentExtractor
 from services.parsers.pyingestion.pyingestion_extractor import (
     PyIngestionDocumentExtractor,
 )
@@ -13,14 +13,17 @@ from services.parsers.pyingestion.streams import (
 )
 
 
-class PyIngestionParserFactory(DocumentParserFactory):
-    """Concrete Abstract Factory that uses PyIngestion to create document extractors."""
+class ParserFactory:
+    def __init__(self, service_factory):
+        self.service_factory = service_factory
 
     def create_primeira_instancia_parser(self) -> DocumentExtractor:
         return PyIngestionDocumentExtractor(
             input_stream_class=lambda: RecursosDocxInputStream(first_instance=True),
             transform_stream_class=NoOpTransformStream,
-            write_stream_factory=lambda: BonfireRecursoWriteStream(first_instance=True),
+            write_stream_factory=lambda: BonfireRecursoWriteStream(
+                self.service_factory, first_instance=True
+            ),
         )
 
     def create_segunda_instancia_parser(self) -> DocumentExtractor:
@@ -28,7 +31,7 @@ class PyIngestionParserFactory(DocumentParserFactory):
             input_stream_class=lambda: RecursosDocxInputStream(first_instance=False),
             transform_stream_class=NoOpTransformStream,
             write_stream_factory=lambda: BonfireRecursoWriteStream(
-                first_instance=False
+                self.service_factory, first_instance=False
             ),
         )
 
@@ -40,7 +43,9 @@ class PyIngestionParserFactory(DocumentParserFactory):
                 date_format="%d/%m/%Y",
                 convert_val_infr=True,
             ),
-            write_stream_factory=lambda: BonfireInfracaoWriteStream(ignore=ignore),
+            write_stream_factory=lambda: BonfireInfracaoWriteStream(
+                self.service_factory, ignore=ignore
+            ),
         )
 
     def create_infracoes_xls_parser(self, ignore: bool = False) -> DocumentExtractor:
@@ -51,5 +56,7 @@ class PyIngestionParserFactory(DocumentParserFactory):
                 date_format="%Y-%m-%d",
                 convert_val_infr=False,
             ),
-            write_stream_factory=lambda: BonfireInfracaoWriteStream(ignore=ignore),
+            write_stream_factory=lambda: BonfireInfracaoWriteStream(
+                self.service_factory, ignore=ignore
+            ),
         )
