@@ -41,6 +41,29 @@ class LinhaRepository:
         return self._to_domain(model)
 
     def insert_bulk(self, linhas_data: List[Dict[str, Any]]) -> int:
+        from exceptions.CustomExceptions import ErrInsertData
+
+        novos_cod_linh = []
+        for data in linhas_data:
+            cod = data.get("COD_LINH")
+            if cod is not None:
+                novos_cod_linh.append(str(cod))
+
+        if novos_cod_linh:
+            existentes = (
+                self.db.query(LinhaModel.COD_LINH)
+                .filter(LinhaModel.COD_LINH.in_(novos_cod_linh))
+                .all()
+            )
+            if existentes:
+                linhas_existentes = ", ".join(str(e[0]) for e in existentes)
+                raise ErrInsertData(
+                    message="Linha já existe",
+                    status=409,
+                    error="Conflict",
+                    friendly_message=f"As seguintes linhas já existem e não podem ser sobrescritas: {linhas_existentes}",
+                )
+
         counter = 0
         for data in linhas_data:
             cod_linh = data.get("COD_LINH")
@@ -53,7 +76,7 @@ class LinhaRepository:
                     DAT_BAIX=data.get("DAT_BAIX"),
                 )
                 model = self._to_model(linha)
-                self.db.merge(model)
+                self.db.add(model)
                 counter += 1
         return counter
 
