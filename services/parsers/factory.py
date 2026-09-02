@@ -1,6 +1,8 @@
-from services.document_parser.core import DocumentExtractor, DocumentParserFactory
-from services.document_parser.pyingestion_extractor import PyIngestionDocumentExtractor
-from services.document_parser.streams import (
+from services.parsers.core import DocumentExtractor, DocumentParserFactory
+from services.parsers.pyingestion.pyingestion_extractor import (
+    PyIngestionDocumentExtractor,
+)
+from services.parsers.pyingestion.streams import (
     BonfireInfracaoWriteStream,
     BonfireRecursoWriteStream,
     InfracoesCsvInputStream,

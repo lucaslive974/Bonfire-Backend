@@ -8,7 +8,7 @@ import pytest
 @pytest.mark.usefixtures("app", "client", "database")
 class TestInfracoes:
     @patch(
-        "services.document_parser.factory.PyIngestionParserFactory.create_infracoes_csv_parser"
+        "services.parsers.factory.PyIngestionParserFactory.create_infracoes_csv_parser"
     )
     def test_post_csv_route(self, mock_create, client, database):
         """Testa se a rota POST /infracao/csv importa com sucesso"""
@@ -39,7 +39,7 @@ class TestInfracoes:
         assert res_data["message"] == "5 autos de infração importados"
 
     @patch(
-        "services.document_parser.factory.PyIngestionParserFactory.create_infracoes_xls_parser"
+        "services.parsers.factory.PyIngestionParserFactory.create_infracoes_xls_parser"
     )
     def test_post_xls_route(self, mock_create, client, database):
         """Testa se a rota POST /infracao/xls insere com sucesso"""

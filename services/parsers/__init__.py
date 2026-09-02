@@ -1,12 +1,12 @@
-from services.document_parser.core import (
+from services.parsers.core import (
     DocumentExtractor,
     DocumentParserFactory,
 )
-from services.document_parser.exceptions import (
+from services.parsers.exceptions import (
     DocumentParsingError,
     UnsupportedFormatError,
 )
-from services.document_parser.factory import PyIngestionParserFactory
+from services.parsers.factory import PyIngestionParserFactory
 
 __all__ = [
     "DocumentExtractor",

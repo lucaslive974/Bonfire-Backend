@@ -3,8 +3,8 @@ from typing import Any, BinaryIO, Callable
 from pyingestion import ExtractionSession, Gaia
 from pyingestion.observer import PipelineEvents
 
-from services.document_parser.core import DocumentExtractor
-from services.document_parser.exceptions import DocumentParsingError
+from services.parsers.core import DocumentExtractor
+from services.parsers.exceptions import DocumentParsingError
 from utils.logger import logger
 
 

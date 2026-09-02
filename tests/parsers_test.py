@@ -6,12 +6,12 @@ import pandas as pd
 import pytest
 from docx import Document
 
-from exceptions.CustomExceptions import ErrDataPubli
-from services.document_parser.streams import (
+from exceptions.CustomExceptions import ErrDataPubli, ErrInvalidFileData
+from services.parsers.pyingestion.streams import (
     InfracoesTransformStream,
     RecursosDocxInputStream,
+    normalize_auto_infraction_id,
 )
-from services.parsers import normalize_auto_infraction_id
 
 
 def test_normalize_auto_infraction_id():
@@ -109,7 +109,6 @@ def test_recursos_docx_stream_missing_date():
         if os.path.exists(doc_path):
             os.remove(doc_path)
 
-from exceptions.CustomExceptions import ErrInvalidFileData
 
 def test_infracoes_transform_missing_ai():
     data_frame = pd.DataFrame(
@@ -135,7 +134,9 @@ def test_recursos_docx_stream_invalid_columns():
 
     try:
         doc = Document()
-        doc.add_paragraph("PUBLICADO NO DIARIO OFICIAL DO MUNICIPIO DE BELO HORIZONTE EM 15/05/2026")
+        doc.add_paragraph(
+            "PUBLICADO NO DIARIO OFICIAL DO MUNICIPIO DE BELO HORIZONTE EM 15/05/2026"
+        )
         doc.add_paragraph("ATA DA 5ª SESSÃO ORDINÁRIA")
         table = doc.add_table(rows=2, cols=3)  # Only 3 cols, should be 4
         table.cell(0, 0).text = "RECURSO"
