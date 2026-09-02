@@ -19,21 +19,6 @@ from exceptions.CustomExceptions import (
 from services.parsers.pyingestion.pubsub import SyncBatchProcessor
 from services.recurso_service import RecursoService
 
-
-def _parse_val_infr(value: Any) -> float | None:
-    """Convert optional Brazilian currency text into a database-ready number."""
-    if pd.isna(value):
-        return None
-
-    normalized = str(value).replace("R$", "").strip()
-    if not normalized:
-        return None
-    if "," in normalized:
-        normalized = normalized.replace(".", "").replace(",", ".")
-
-    return float(pd.to_numeric(normalized))
-
-
 # ==========================================
 # WRITE STREAMS (Output)
 # ==========================================
@@ -423,3 +408,17 @@ def normalize_auto_infraction_id(ai: str) -> str:
         return ai
 
     return f"{ai[:-1]}-{ai[-1]}"
+
+
+def _parse_val_infr(value: Any) -> float | None:
+    """Convert optional Brazilian currency text into a database-ready number."""
+    if pd.isna(value):
+        return None
+
+    normalized = str(value).replace("R$", "").strip()
+    if not normalized:
+        return None
+    if "," in normalized:
+        normalized = normalized.replace(".", "").replace(",", ".")
+
+    return float(pd.to_numeric(normalized))
