@@ -1,0 +1,48 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  lint-format-test:
+    name: Lint, Format & Tests
+    runs-on: self-hosted
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Setup Python 3.14
+        run: |
+          uv venv --python 3.14 .venv
+          echo "$(pwd)/.venv/bin" >> $GITHUB_PATH
+
+      - name: Install Dependencies
+        run: |
+          if [ -f requirements-dev.txt ]; then
+            uv pip install -r requirements-dev.txt
+          elif [ -f requirements.txt ]; then
+            uv pip install -r requirements.txt pytest ruff
+          else
+            uv pip install pytest ruff
+          fi
+
+      - name: Lint (Ruff)
+        run: ruff check .
+
+      - name: Format Check (Ruff)
+        run: ruff format --check .
+
+      - name: Unit Tests (Pytest)
+        run: pytest
