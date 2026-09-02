@@ -37,10 +37,9 @@ def app():
 
         fake_manager = FakeRepositoryManager()
         application.extensions["db_manager"] = fake_manager
-        application.extensions["service_factory"] = ServiceFactory(fake_manager)
 
         # Initialize Document Parser Factory
-        from services.parsers.factory import ParserFactory
+        from core.parsers.factory import ParserFactory
 
         application.extensions["parser_factory"] = ParserFactory(
             application.extensions["service_factory"]

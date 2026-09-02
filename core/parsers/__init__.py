@@ -1,9 +1,9 @@
-from services.parsers.core import DocumentExtractor
-from services.parsers.exceptions import (
+from core.parsers.core import DocumentExtractor
+from core.parsers.exceptions import (
     DocumentParsingError,
     UnsupportedFormatError,
 )
-from services.parsers.factory import ParserFactory
+from core.parsers.factory import ParserFactory
 
 __all__ = [
     "DocumentExtractor",

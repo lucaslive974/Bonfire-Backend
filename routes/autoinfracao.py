@@ -12,11 +12,11 @@ def post_csv():
             "Arquivo CSV de infrações não está presente na requisição", 400
         )
     file = request.files["file"]
-    factory = current_app.extensions.get("parser_factory")
+    factory = current_app.extensions.get("service_factory")
     if not factory:
-        raise ErrIncompleteData("ParserFactory not configured", 500)
-    extractor = factory.create_infracoes_csv_parser(ignore=True)
-    metrics = extractor.extract(file.stream)
+        raise ErrIncompleteData("ServiceFactory not configured", 500)
+    service = factory.get_autoinfracao_service()
+    metrics = service.extract_csv(file.stream, ignore=True)
     return jsonify(
         {"message": f"{metrics.get('inserted', 0)} autos de infração importados"}
     ), 200
@@ -30,11 +30,11 @@ def post_xls():
         )
     file = request.files["file"]
     insert_ignore = str(request.args.get("insert_ignore", "true")).lower() == "true"
-    factory = current_app.extensions.get("parser_factory")
+    factory = current_app.extensions.get("service_factory")
     if not factory:
-        raise ErrIncompleteData("ParserFactory not configured", 500)
-    extractor = factory.create_infracoes_xls_parser(ignore=insert_ignore)
-    metrics = extractor.extract(file.stream)
+        raise ErrIncompleteData("ServiceFactory not configured", 500)
+    service = factory.get_autoinfracao_service()
+    metrics = service.extract_xls(file.stream, ignore=insert_ignore)
     return jsonify(
         {"message": f"{metrics.get('inserted', 0)} autos inseridos com sucesso"}
     ), 200

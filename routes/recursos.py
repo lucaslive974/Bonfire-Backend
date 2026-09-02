@@ -16,11 +16,11 @@ def post_recursos_primeira_instancia():
             400,
         )
     file = request.files["file"]
-    factory = current_app.extensions.get("parser_factory")
+    factory = current_app.extensions.get("service_factory")
     if not factory:
-        raise ErrIncompleteData("ParserFactory not configured", 500)
-    extractor = factory.create_primeira_instancia_parser()
-    metrics = extractor.extract(file.stream)
+        raise ErrIncompleteData("ServiceFactory not configured", 500)
+    service = factory.get_recurso_service()
+    metrics = service.extract_primeira_instancia(file.stream)
     return jsonify(
         {
             "message": "itens Extraídos e armazenados com sucesso!",
@@ -39,11 +39,11 @@ def post_recursos_segunda_instancia():
             400,
         )
     file = request.files["file"]
-    factory = current_app.extensions.get("parser_factory")
+    factory = current_app.extensions.get("service_factory")
     if not factory:
-        raise ErrIncompleteData("ParserFactory not configured", 500)
-    extractor = factory.create_segunda_instancia_parser()
-    metrics = extractor.extract(file.stream)
+        raise ErrIncompleteData("ServiceFactory not configured", 500)
+    service = factory.get_recurso_service()
+    metrics = service.extract_segunda_instancia(file.stream)
     return jsonify(
         {
             "message": "itens Extraídos e armazenados com sucesso!",

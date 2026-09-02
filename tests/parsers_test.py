@@ -7,7 +7,7 @@ import pytest
 from docx import Document
 
 from exceptions.CustomExceptions import ErrDataPubli, ErrInvalidFileData
-from services.parsers.pyingestion.streams import (
+from core.parsers.pyingestion.streams import (
     InfracoesTransformStream,
     RecursosDocxInputStream,
     normalize_auto_infraction_id,

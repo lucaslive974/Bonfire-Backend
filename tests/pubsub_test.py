@@ -1,7 +1,7 @@
 import pytest
 
 from exceptions.CustomExceptions import ErrInvalidFileData
-from services.parsers.pyingestion.pubsub import SyncBatchProcessor
+from core.parsers.pyingestion.pubsub import SyncBatchProcessor
 
 
 def test_pubsub_unconsumed_columns_error():

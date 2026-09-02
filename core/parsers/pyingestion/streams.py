@@ -16,7 +16,7 @@ from exceptions.CustomExceptions import (
     ErrQuantityOfAtas,
     ErrReadingFile,
 )
-from services.parsers.pyingestion.pubsub import SyncBatchProcessor
+from core.parsers.pyingestion.pubsub import SyncBatchProcessor
 
 # ==========================================
 # WRITE STREAMS (Output)
@@ -25,9 +25,9 @@ from services.parsers.pyingestion.pubsub import SyncBatchProcessor
 
 class BonfireRecursoWriteStream(OutputStream[Any]):
     def __init__(
-        self, service_factory, first_instance: bool = True, batch_size: int = 100
+        self, db_manager, first_instance: bool = True, batch_size: int = 100
     ):
-        self.service_factory = service_factory
+        self.db_manager = db_manager
         self.first_instance = first_instance
         self.processor = SyncBatchProcessor(self._process_batch, batch_size=batch_size)
         self.processor.start()
@@ -41,19 +41,20 @@ class BonfireRecursoWriteStream(OutputStream[Any]):
             self.processor.publish(item)
 
     def _process_batch(self, batch: List[Any]) -> int:
-        service = self.service_factory.get_recurso_service()
-        if self.first_instance:
-            return service.insert_primeira_instancia(batch)
-        else:
-            return service.insert_segunda_instancia(batch)
+        with self.db_manager.session() as session:
+            repo = session.get_recurso_repository()
+            if self.first_instance:
+                return repo.insert_primeira_instancia(batch)
+            else:
+                return repo.insert_segunda_instancia(batch)
 
     def flush(self) -> None:
         self.processor.stop()
 
 
 class BonfireInfracaoWriteStream(OutputStream[Any]):
-    def __init__(self, service_factory, ignore: bool = False, batch_size: int = 1000):
-        self.service_factory = service_factory
+    def __init__(self, db_manager, ignore: bool = False, batch_size: int = 1000):
+        self.db_manager = db_manager
         self.ignore = ignore
         self.processor = SyncBatchProcessor(self._process_batch, batch_size=batch_size)
         self.processor.start()
@@ -67,8 +68,7 @@ class BonfireInfracaoWriteStream(OutputStream[Any]):
             self.processor.publish(item)
 
     def _process_batch(self, batch: List[Any]) -> int:
-        db_manager = self.service_factory._db_manager
-        with db_manager.session() as session:
+        with self.db_manager.session() as session:
             repo = session.get_autoinfracao_repository()
             return repo.insert_bulk_rows(batch, ignore=self.ignore)
 
