@@ -23,6 +23,24 @@ class TestConsorcio:
         assert len(data["consorcios"]) == 1
         assert data["consorcios"][0]["ID"] == 107
 
+    @patch("services.consorcio_service.ConsorcioService.get_consorcios")
+    def test_get_v1_route(self, mock_get, client, database):
+        """Testa se a rota GET /v1/consorcio retorna a lista correta de consórcios"""
+        mock_get.return_value = [
+            {
+                "ID": 107,
+                "NOME": "MILENIO TRANSPORTES",
+                "CONCESSIONARIA": "CONSORCIO PAMPULHA",
+            }
+        ]
+
+        response = client.get("/v1/consorcio")
+        assert response.status_code == 200
+        data = response.get_json()
+        assert "consorcios" in data
+        assert len(data["consorcios"]) == 1
+        assert data["consorcios"][0]["ID"] == 107
+
     @patch("services.consorcio_service.ConsorcioService.insert_consorcios")
     def test_insert_route(self, mock_insert, client, database):
         """Testa se a rota POST /consorcio insere consórcios com sucesso"""
@@ -90,3 +108,18 @@ class TestConsorcio:
         data = response.get_json()
         assert data["message"] == "Consórcio deletado com sucesso"
         assert data["counter"] == 1
+
+    def test_insert_route_validation_error(self, client, database):
+        """Testa se a validação do Pydantic/SpecTree retorna 422 em payload inválido"""
+        # Payload com campo NOME faltando
+        invalid_payload = [
+            {
+                "ID": 107,
+                "CONCESSIONARIA": "CONSORCIO PAMPULHA",
+            }
+        ]
+        response = client.post("/consorcio", json=invalid_payload)
+        assert response.status_code == 422
+        data = response.get_json()
+        assert data["error"] == "ValidationError"
+        assert "NOME" in data["message"]

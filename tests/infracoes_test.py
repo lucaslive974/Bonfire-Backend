@@ -85,3 +85,29 @@ class TestInfracoes:
         assert "db_rows" in res_data
         assert "file_rows" in res_data
         assert "Not Present" in res_data
+
+    def test_post_csv_no_file(self, client, database):
+        """Testa validação de arquivo ausente em /infracao/csv"""
+        response = client.post(
+            "/infracao/csv", data={}, content_type="multipart/form-data"
+        )
+        assert response.status_code == 400
+        res_data = response.get_json()
+        assert res_data["error"] == "Incomplete Data"
+        assert (
+            res_data["message"]
+            == "Arquivo CSV de infrações não está presente na requisição"
+        )
+
+    def test_post_xls_no_file(self, client, database):
+        """Testa validação de arquivo ausente em /infracao/xls"""
+        response = client.post(
+            "/infracao/xls", data={}, content_type="multipart/form-data"
+        )
+        assert response.status_code == 400
+        res_data = response.get_json()
+        assert res_data["error"] == "Incomplete Data"
+        assert (
+            res_data["message"]
+            == "Arquivo XLS de infrações não está presente na requisição"
+        )

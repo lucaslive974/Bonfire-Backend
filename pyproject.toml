@@ -22,6 +22,8 @@ dependencies = [
     "pyingestion",
     "PyJWT",
     "cryptography",
+    "pydantic>=2.0",
+    "spectree",
 ]
 
 [project.optional-dependencies]
