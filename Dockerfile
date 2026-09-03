@@ -5,7 +5,7 @@ WORKDIR /app
 COPY . .
 
 # Instalação das dependências do projeto
-RUN pip install -r requirements.txt
+RUN pip install .
 
 EXPOSE 5000
 

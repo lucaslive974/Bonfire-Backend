@@ -29,14 +29,7 @@ jobs:
           echo "$(pwd)/.venv/bin" >> $GITHUB_PATH
 
       - name: Install Dependencies
-        run: |
-          if [ -f requirements-dev.txt ]; then
-            uv pip install -r requirements-dev.txt
-          elif [ -f requirements.txt ]; then
-            uv pip install -r requirements.txt pytest ruff
-          else
-            uv pip install pytest ruff
-          fi
+        run: uv pip install ".[dev]"
 
       - name: Lint (Ruff)
         run: ruff check .
