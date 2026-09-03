@@ -1,11 +1,12 @@
-from flask import Flask, Response, jsonify, request
+from flask import Flask, Response, current_app, jsonify, request
 from flask_cors import CORS
 
 from core.auth import Authenticator, KeyCloakAuthenticator
 from core.cache import InMemoryCache
 from core.parsers.factory import ParserFactory
 from exceptions.CustomExceptions import CustomException
-from routes import autoinfracao, consorcio, linha, recursos, veiculos
+from routes.spec import spec
+from routes.v1 import autoinfracao, consorcio, linha, recursos, veiculos
 from utils.logger import http_logger, logger
 
 
@@ -18,12 +19,27 @@ class BonfireApp(Flask):
         CORS(self)
 
         logger.info("::Registering routes::")
-        self.register_blueprint(autoinfracao.AutoInfracaoBlueprint)
-        self.register_blueprint(recursos.RecursoPrimeiraInstanciaBlueprint)
-        self.register_blueprint(recursos.RecuroSegundaInstanciaBlueprint)
-        self.register_blueprint(veiculos.veiculoBlueprint)
-        self.register_blueprint(linha.linhaBlueprint)
-        self.register_blueprint(consorcio.consorcioBlueprint)
+        secured_blueprints = [
+            autoinfracao.AutoInfracaoBlueprint,
+            recursos.RecursoPrimeiraInstanciaBlueprint,
+            recursos.RecuroSegundaInstanciaBlueprint,
+            veiculos.veiculoBlueprint,
+            linha.linhaBlueprint,
+            consorcio.consorcioBlueprint,
+        ]
+
+        def _blueprint_auth():
+            if hasattr(current_app, "checkAuth"):
+                return current_app.checkAuth()
+            return None
+
+        for bp in secured_blueprints:
+            if not bp._got_registered_once:
+                bp.before_request(_blueprint_auth)
+            # Register versioned routes at /v1/...
+            self.register_blueprint(bp, url_prefix="/v1")
+            # Register legacy un-prefixed routes for backward compatibility
+            self.register_blueprint(bp, name=f"{bp.name}_legacy")
 
         # Initialize Application Cache
         self.extensions["cache"] = InMemoryCache()
@@ -64,13 +80,12 @@ class BonfireApp(Flask):
                 }
             ), status_code
 
-        @self.before_request
-        def _():
-            return self.checkAuth()
-
         @self.after_request
         def _(response: Response):
             return self.logRequest(response)
+
+        # Register OpenAPI SpecTree
+        spec.register(self)
 
     def logRequest(self, response: Response):
         http_logger.request(request, response.status_code)
