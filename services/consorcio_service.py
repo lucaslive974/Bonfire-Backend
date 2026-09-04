@@ -25,9 +25,33 @@ class ConsorcioService:
 
     def update_consorcios(self, consorcios: List[Operadora]) -> int:
         """Update a list of consórcio domain entities in the database."""
+        ids = [item.id for item in consorcios if item.id is not None]
+        if not ids:
+            return 0
+
         with self._db_manager.session() as session:
             repo = session.get_consorcio_repository()
-            return repo.update_bulk(consorcios)
+            existing = repo.get_by_ids(ids)
+            existing_map = {op.id: op for op in existing if op.id is not None}
+
+            updated_ids = set()
+            to_update: List[Operadora] = []
+            for item in consorcios:
+                if item.id is not None and item.id in existing_map:
+                    operadora = existing_map[item.id]
+                    if item.name is not None:
+                        operadora.set_name(item.name)
+                    if item.concessionaire is not None:
+                        operadora.set_concessionaire(item.concessionaire)
+
+                    if item.id not in updated_ids:
+                        to_update.append(operadora)
+                        updated_ids.add(item.id)
+
+            if not to_update:
+                return 0
+
+            return repo.update_bulk(to_update)
 
     def delete_consorcio(self, id_consorcio: str | int) -> int:
         """Delete a consórcio from the database by its ID."""

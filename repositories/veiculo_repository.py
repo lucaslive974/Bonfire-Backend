@@ -45,6 +45,17 @@ class VeiculoRepository(IVeiculoRepository):
         )
         return self._to_domain(model)
 
+    def get_by_ids(self, num_veics: List[int]) -> List[Veiculo]:
+        """Find vehicles by a list of vehicle numbers."""
+        if not num_veics:
+            return []
+        models = (
+            self.db.query(VeiculoModel)
+            .filter(VeiculoModel.NUM_VEIC.in_(num_veics))
+            .all()
+        )
+        return [self._to_domain(m) for m in models if m is not None]
+
     def insert(self, veiculo: Veiculo) -> bool:
         """Insert a single vehicle entity."""
         model = self._to_model(veiculo)
@@ -80,33 +91,13 @@ class VeiculoRepository(IVeiculoRepository):
         return counter
 
     def update_bulk(self, veiculos: List[Veiculo]) -> int:
-        """Update fields for a list of vehicle domain entities in the database."""
+        """Persist updated vehicle domain entities to the database."""
         counter = 0
-        for item in veiculos:
-            if item.vehicle_number is not None:
-                model = (
-                    self.db.query(VeiculoModel)
-                    .filter(VeiculoModel.NUM_VEIC == item.vehicle_number)
-                    .first()
-                )
-                if model:
-                    veiculo = self._to_domain(model)
-                    if veiculo:
-                        if item.license_plate is not None:
-                            veiculo.set_license_plate(item.license_plate)
-                        if item.active is not None:
-                            if not item.active:
-                                veiculo.deactivate(item.deregistration_date)
-                            else:
-                                veiculo.activate()
-                        elif item.deregistration_date is not None:
-                            veiculo.set_deregistration_date(item.deregistration_date)
-
-                        model.IDN_PLAC_VEIC = veiculo.get_license_plate()
-                        model.VEIC_ATIV_EMPR = veiculo.is_active()
-                        model.DAT_BAIX = veiculo.get_deregistration_date()
-                        self.db.merge(model)
-                        counter += 1
+        for veiculo in veiculos:
+            if veiculo.vehicle_number is not None:
+                model = self._to_model(veiculo)
+                self.db.merge(model)
+                counter += 1
         return counter
 
     def delete(self, num_veic: int) -> int:

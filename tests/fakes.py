@@ -48,6 +48,9 @@ class FakeVeiculoRepository(IVeiculoRepository):
     def get_by_id(self, num_veic):
         return None
 
+    def get_by_ids(self, num_veics):
+        return []
+
     def insert(self, veiculo):
         return True
 
@@ -68,6 +71,9 @@ class FakeLinhaRepository(ILinhaRepository):
     def get_by_id(self, cod_linh):
         return None
 
+    def get_by_ids(self, cod_linhas):
+        return []
+
     def insert_bulk(self, data):
         return len(data)
 
@@ -84,6 +90,9 @@ class FakeConsorcioRepository(IConsorcioRepository):
 
     def get_by_id(self, id_consorcio):
         return None
+
+    def get_by_ids(self, ids_consorcios):
+        return []
 
     def insert_bulk(self, data):
         return len(data)

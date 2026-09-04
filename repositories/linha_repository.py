@@ -47,6 +47,15 @@ class LinhaRepository(ILinhaRepository):
         )
         return self._to_domain(model)
 
+    def get_by_ids(self, cod_linhas: List[str]) -> List[Linha]:
+        """Find lines by a list of line codes."""
+        if not cod_linhas:
+            return []
+        models = (
+            self.db.query(LinhaModel).filter(LinhaModel.COD_LINH.in_(cod_linhas)).all()
+        )
+        return [self._to_domain(m) for m in models if m is not None]
+
     def insert_bulk(self, linhas: List[Linha]) -> int:
         """Insert a list of line domain entities into the database."""
         from exceptions.CustomExceptions import ErrInsertData
@@ -99,60 +108,13 @@ class LinhaRepository(ILinhaRepository):
         return counter
 
     def update_bulk(self, linhas: List[Linha]) -> int:
-        """Update fields for a list of line domain entities in the database."""
-        from exceptions.CustomExceptions import ErrUpdateData
-        from repositories.models.operadora_model import OperadoraModel
-
-        operadoras_ids = {
-            linha.ID_OPERADORA for linha in linhas if linha.ID_OPERADORA is not None
-        }
-
-        if operadoras_ids:
-            existentes_operadoras = (
-                self.db.query(OperadoraModel.ID)
-                .filter(OperadoraModel.ID.in_(operadoras_ids))
-                .all()
-            )
-            existentes_ids = {e[0] for e in existentes_operadoras}
-            faltantes = operadoras_ids - existentes_ids
-            if faltantes:
-                faltantes_str = ", ".join(str(f) for f in faltantes)
-                raise ErrUpdateData(
-                    message="Operadora inexistente",
-                    status=400,
-                    error="Bad Request",
-                    friendly_message=f"Não é possível atualizar. Os seguintes consórcios/operadoras não existem: {faltantes_str}",
-                )
-
+        """Persist updated line domain entities to the database."""
         counter = 0
-        for item in linhas:
-            if isinstance(item.line_code, str):
-                model = (
-                    self.db.query(LinhaModel)
-                    .filter(LinhaModel.COD_LINH == item.line_code)
-                    .first()
-                )
-                if model:
-                    linha = self._to_domain(model)
-                    if linha:
-                        if item.shared is not None:
-                            linha.set_shared(item.shared)
-                        if item.operator_id is not None:
-                            linha.set_operator_id(item.operator_id)
-                        if item.active is not None:
-                            if not item.active:
-                                linha.deactivate(item.deregistration_date)
-                            else:
-                                linha.activate()
-                        elif item.deregistration_date is not None:
-                            linha.set_deregistration_date(item.deregistration_date)
-
-                        model.COMPARTILHADA = linha.is_shared()
-                        model.ID_OPERADORA = linha.get_operator_id()
-                        model.LINH_ATIV_EMPR = linha.is_active()
-                        model.DAT_BAIX = linha.get_deregistration_date()
-                        self.db.merge(model)
-                        counter += 1
+        for linha in linhas:
+            if linha.line_code is not None:
+                model = self._to_model(linha)
+                self.db.merge(model)
+                counter += 1
         return counter
 
     def delete(self, cod_linh: str) -> int:
