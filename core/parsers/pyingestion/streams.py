@@ -81,8 +81,7 @@ class BonfireInfracaoWriteStream(OutputStream[Any]):
 
 class RecursosDocxInputStream(InputStream[Any, Dict[str, Any]]):
     """
-    Substitui a lógica de parse_docx_recursos, extraindo recursos do DOCX
-    e fazendo o yield item por item, respeitando o modelo de stream.
+    Extracts appeals from DOCX files and yields items one by one in stream fashion.
     """
 
     def __init__(self, first_instance: bool = True):
@@ -269,7 +268,7 @@ class InfracoesCsvInputStream(InputStream[Any, pd.DataFrame]):
 
 
 class InfracoesXlsInputStream(InputStream[Any, pd.DataFrame]):
-    """InputStream para arquivos de infração XLS."""
+    """InputStream for XLS infraction files."""
 
     def __init__(self):
         self.current_unit_index = 0
@@ -294,8 +293,8 @@ class InfracoesXlsInputStream(InputStream[Any, pd.DataFrame]):
 
 class InfracoesTransformStream(TransformStream[pd.DataFrame, List[Dict[str, Any]]]):
     """
-    Transforma o DataFrame de Infrações formatando as colunas e datas.
-    Recebe os formatos de data/hora no construtor para reaproveitar a lógica entre CSV e XLS.
+    Transforms the Infractions DataFrame by formatting columns and dates.
+    Accepts date/time formats in the constructor to reuse logic between CSV and XLS.
     """
 
     def __init__(
@@ -391,7 +390,7 @@ class InfracoesTransformStream(TransformStream[pd.DataFrame, List[Dict[str, Any]
 
 
 class NoOpTransformStream(TransformStream[Any, Any]):
-    """Transform Stream que não altera os dados, apenas passa adiante."""
+    """Pass-through TransformStream that forwards chunks unaltered."""
 
     def transform(self, data: Any) -> Any:
         return data

@@ -6,8 +6,8 @@ import jwt
 import requests
 from keycloak import KeycloakOpenID
 
-from classes.Config import config
 from core.cache.interface import ICache
+from core.config import config
 from utils.logger import logger
 
 
@@ -37,7 +37,7 @@ class KeyCloakAuthenticator(Authenticator):
             config.KEYCLOAK_CLIENT_SECRET,
         )
 
-        # O endpoint padrão do Keycloak para JWKS (Chaves Públicas)
+        # Standard Keycloak endpoint for JWKS (Public Keys)
         realm = config.KEYCLOAK_REALM_NAME or ""
         issuer = config.KEYCLOAK_ISSUER or ""
         self.certs_url = f"{issuer}/realms/{realm}/protocol/openid-connect/certs"

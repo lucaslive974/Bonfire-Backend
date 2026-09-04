@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import List
 
 from sqlalchemy.orm import Session
 
@@ -28,12 +28,12 @@ class ConsorcioRepository(IConsorcioRepository):
         )
 
     def get_all(self) -> List[Operadora]:
-        """Retorna todas as operadoras (consórcios)."""
+        """Return all operator entities (consórcios)."""
         models = self.db.query(OperadoraModel).all()
         return [self._to_domain(m) for m in models if m is not None]
 
     def get_by_id(self, id_consorcio: int) -> Operadora | None:
-        """Busca uma operadora pelo ID."""
+        """Find an operator by ID."""
         model = (
             self.db.query(OperadoraModel)
             .filter(OperadoraModel.ID == id_consorcio)
@@ -41,50 +41,40 @@ class ConsorcioRepository(IConsorcioRepository):
         )
         return self._to_domain(model)
 
-    def insert_bulk(self, consorcios_data: List[Dict[str, Any]]) -> int:
-        """Insere ou atualiza (merge) uma lista de consórcios no banco de dados."""
+    def insert_bulk(self, consorcios: List[Operadora]) -> int:
+        """Insert or merge a list of consórcio entities into the database."""
         counter = 0
-        for data in consorcios_data:
-            id_consorcio = data.get("ID") or data.get("id")
-            if id_consorcio is not None:
-                operadora = Operadora(
-                    ID=int(id_consorcio),
-                    NOME=data.get("NOME") or data.get("nome"),
-                    CONCESSIONARIA=data.get("CONCESSIONARIA")
-                    or data.get("concessionaria"),
-                )
-                model = self._to_model(operadora)
-                self.db.merge(model)
-                counter += 1
+        for item in consorcios:
+            model = self._to_model(item)
+            self.db.merge(model)
+            counter += 1
         return counter
 
-    def update_bulk(self, consorcios_data: List[Dict[str, Any]]) -> int:
-        """Atualiza campos de uma lista de consórcios no banco de dados."""
+    def update_bulk(self, consorcios: List[Operadora]) -> int:
+        """Update fields for a list of consórcio entities in the database."""
         counter = 0
-        for data in consorcios_data:
-            id_consorcio = data.get("ID") or data.get("id")
-            if id_consorcio is not None:
-                try:
-                    id_consorcio_int = int(id_consorcio)
-                except ValueError, TypeError:
-                    continue
+        for item in consorcios:
+            if item.ID is not None:
                 model = (
                     self.db.query(OperadoraModel)
-                    .filter(OperadoraModel.ID == id_consorcio_int)
+                    .filter(OperadoraModel.ID == item.ID)
                     .first()
                 )
                 if model:
                     operadora = self._to_domain(model)
                     if operadora:
-                        operadora.atualizar(data)
-                        model.NOME = operadora.NOME
-                        model.CONCESSIONARIA = operadora.CONCESSIONARIA
+                        if item.name is not None:
+                            operadora.set_name(item.name)
+                        if item.concessionaire is not None:
+                            operadora.set_concessionaire(item.concessionaire)
+                        model.NOME = operadora.get_name()
+                        model.CONCESSIONARIA = operadora.get_concessionaire()
                         self.db.merge(model)
                         counter += 1
         return counter
 
     def delete(self, id_consorcio: int) -> int:
-        """Exclui um consórcio pelo ID."""
+        """Delete a consórcio by its ID."""
         deleted = (
             self.db.query(OperadoraModel)
             .filter(OperadoraModel.ID == id_consorcio)

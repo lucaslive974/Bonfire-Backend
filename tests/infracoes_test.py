@@ -9,7 +9,7 @@ import pytest
 class TestInfracoes:
     @patch("core.parsers.factory.ParserFactory.create_infracoes_csv_parser")
     def test_post_csv_route(self, mock_create, client, database):
-        """Testa se a rota POST /infracao/csv importa com sucesso"""
+        """Test that POST /infracao/csv imports infractions successfully."""
         from unittest.mock import MagicMock
 
         mock_extractor = MagicMock()
@@ -38,7 +38,7 @@ class TestInfracoes:
 
     @patch("core.parsers.factory.ParserFactory.create_infracoes_xls_parser")
     def test_post_xls_route(self, mock_create, client, database):
-        """Testa se a rota POST /infracao/xls insere com sucesso"""
+        """Test that POST /infracao/xls inserts infractions successfully."""
         from unittest.mock import MagicMock
 
         mock_extractor = MagicMock()
@@ -60,7 +60,7 @@ class TestInfracoes:
 
     @patch("services.autoinfracao_service.AutoInfracaoService.get_infracoes")
     def test_get_infracoes_route(self, mock_get, client, database):
-        """Testa se a rota GET /infracao busca corretamente"""
+        """Test that GET /infracao queries infractions correctly."""
         mock_get.return_value = [{"NUM_AI": "1234-A", "VAL_INFR": 150.0}]
 
         response = client.get("/infracao?ai=1234-A")
@@ -72,7 +72,7 @@ class TestInfracoes:
 
     @patch("services.autoinfracao_service.AutoInfracaoService.check_infracoes")
     def test_check_infracoes_route(self, mock_check, client, database):
-        """Testa se a rota POST /infracao/check valida os registros"""
+        """Test that POST /infracao/check validates infraction records."""
         mock_check.return_value = (8, 10, ["9999-X", "8888-Y"])
 
         data = {"file": (BytesIO(b"NUM_AI\n1234;5678"), "test.csv")}
@@ -87,7 +87,7 @@ class TestInfracoes:
         assert "Not Present" in res_data
 
     def test_post_csv_no_file(self, client, database):
-        """Testa validação de arquivo ausente em /infracao/csv"""
+        """Test missing file validation on POST /infracao/csv."""
         response = client.post(
             "/infracao/csv", data={}, content_type="multipart/form-data"
         )
@@ -100,7 +100,7 @@ class TestInfracoes:
         )
 
     def test_post_xls_no_file(self, client, database):
-        """Testa validação de arquivo ausente em /infracao/xls"""
+        """Test missing file validation on POST /infracao/xls."""
         response = client.post(
             "/infracao/xls", data={}, content_type="multipart/form-data"
         )

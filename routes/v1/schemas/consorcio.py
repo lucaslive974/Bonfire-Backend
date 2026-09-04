@@ -1,9 +1,11 @@
 from typing import List, Union
 
-from pydantic import BaseModel, Field, RootModel
+from pydantic import BaseModel, ConfigDict, Field, RootModel
 
 
 class ConsorcioItemDTO(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     ID: Union[int, str] = Field(
         ..., description="Identificador do consórcio / operadora"
     )

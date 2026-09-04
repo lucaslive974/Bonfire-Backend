@@ -3,7 +3,7 @@ from contextlib import contextmanager
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import scoped_session, sessionmaker
 
-from classes.Config import config
+from core.config import config
 from exceptions.CustomExceptions import ErrCreatingDbConnection, ErrInvalidDbConfig
 from repositories.autoinfracao_repository import AutoInfracaoRepository
 from repositories.consorcio_repository import ConsorcioRepository

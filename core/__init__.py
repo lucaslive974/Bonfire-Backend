@@ -1,1 +1,1 @@
-# Pacote core
+# Core package

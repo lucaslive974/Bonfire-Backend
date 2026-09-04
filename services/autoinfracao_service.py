@@ -7,23 +7,23 @@ from repositories.interfaces import IRepositoryManager
 
 
 class AutoInfracaoService:
-    """Serviço de domínio para casos de uso de Autos de Infração."""
+    """Domain service for Traffic Infraction Notice use cases."""
 
     def __init__(self, db_manager: IRepositoryManager, parser_factory=None):
         self._parser_factory = parser_factory
         self._db_manager = db_manager
 
     def get_infracoes(self, date: Any, ai: Any) -> List[Dict[str, Any]]:
-        """Recupera os autos de infração."""
+        """Retrieve infraction notices."""
         with self._db_manager.session() as session:
             repo = session.get_autoinfracao_repository()
             infracoes = repo.get_infracoes(date, ai)
             return [inf.as_dict() for inf in infracoes]
 
-    def check_infracoes(self, csv: Any) -> Tuple[int, int, List[str]]:
-        """Realiza a verificação dos autos de infração no banco de dados."""
+    def check_infracoes(self, file_stream: Any) -> Tuple[int, int, List[str]]:
+        """Verify presence of infraction notices in database from a CSV file stream."""
         try:
-            data_frame = pd.read_csv(csv, header=0, delimiter=";")
+            data_frame = pd.read_csv(file_stream, header=0, delimiter=";")
             values = data_frame["NUM_AI"].unique().tolist()
         except Exception as e:
             raise ErrReadingFile(f"Erro ao ler o arquivo CSV. {e}", 500)

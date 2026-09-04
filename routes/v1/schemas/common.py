@@ -14,7 +14,7 @@ UploadFile = Annotated[
 
 
 def validate_required_file(data: Any, error_message: str) -> Any:
-    """Valida a presença obrigatória de arquivo em requisições multipart/form-data."""
+    """Validates mandatory presence of file in multipart/form-data requests."""
     if (
         not isinstance(data, dict)
         or "file" not in data
@@ -40,7 +40,7 @@ def create_api_response(
     success_code: int = 200,
     **extra_responses: Any,
 ) -> Response:
-    """Gera respostas padronizadas para documentação OpenAPI."""
+    """Generates standardized response mapping for OpenAPI documentation."""
     responses: dict[str, Any] = {
         "HTTP_400": ErrorResponseDTO,
         "HTTP_401": ErrorResponseDTO,

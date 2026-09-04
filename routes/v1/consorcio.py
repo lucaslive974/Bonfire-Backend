@@ -1,7 +1,8 @@
-from flask import Blueprint, current_app
+from flask import Blueprint
 
-from exceptions.CustomExceptions import ErrIncompleteData
+from classes.Operadora import Operadora
 from routes.spec import spec
+from routes.v1.dependencies import get_consorcio_service
 from routes.v1.schemas.common import MutationResponseDTO, create_api_response
 from routes.v1.schemas.consorcio import (
     ConsorcioListRequestDTO,
@@ -9,13 +10,7 @@ from routes.v1.schemas.consorcio import (
 )
 
 consorcioBlueprint = Blueprint("consorcio", __name__)
-
-
-def _get_service():
-    factory = current_app.extensions.get("service_factory")
-    if not factory:
-        raise ErrIncompleteData("ServiceFactory not configured", 500)
-    return factory.get_consorcio_service()
+_get_service = get_consorcio_service
 
 
 @consorcioBlueprint.route("/consorcio", methods=["GET"])
@@ -25,7 +20,7 @@ def _get_service():
     tags=["Consórcio"],
 )
 def execute_route_get_consorcio():
-    """Rota para buscar todos os consórcios"""
+    """Route to get all consórcios."""
     service = _get_service()
     response = service.get_consorcios()
     return ConsorcioListResponseDTO(consorcios=response), 200
@@ -39,10 +34,13 @@ def execute_route_get_consorcio():
     tags=["Consórcio"],
 )
 def execute_route_post_consorcio(json: ConsorcioListRequestDTO):
-    """Rota para inserir novos consórcios"""
-    jsonData = json.model_dump()
+    """Route to insert new consórcios."""
+    operadoras = [
+        Operadora(ID=item.ID, NOME=item.NOME, CONCESSIONARIA=item.CONCESSIONARIA)
+        for item in json.root
+    ]
     service = _get_service()
-    response = service.insert_consorcios(jsonData)
+    response = service.insert_consorcios(operadoras)
     return (
         MutationResponseDTO(
             message="Consórcios inseridos com sucesso", counter=response
@@ -59,10 +57,13 @@ def execute_route_post_consorcio(json: ConsorcioListRequestDTO):
     tags=["Consórcio"],
 )
 def execute_route_patch_consorcio(json: ConsorcioListRequestDTO):
-    """Rota para atualizar parcialmente consórcios"""
-    jsonData = json.model_dump()
+    """Route to partially update consórcios."""
+    operadoras = [
+        Operadora(ID=item.ID, NOME=item.NOME, CONCESSIONARIA=item.CONCESSIONARIA)
+        for item in json.root
+    ]
     service = _get_service()
-    response = service.update_consorcios(jsonData)
+    response = service.update_consorcios(operadoras)
     return (
         MutationResponseDTO(
             message="Consórcios atualizados com sucesso", counter=response
@@ -79,10 +80,13 @@ def execute_route_patch_consorcio(json: ConsorcioListRequestDTO):
     tags=["Consórcio"],
 )
 def execute_route_put_consorcio(json: ConsorcioListRequestDTO):
-    """Rota para atualizar consórcios (PUT)"""
-    jsonData = json.model_dump()
+    """Route to update consórcios (PUT)."""
+    operadoras = [
+        Operadora(ID=item.ID, NOME=item.NOME, CONCESSIONARIA=item.CONCESSIONARIA)
+        for item in json.root
+    ]
     service = _get_service()
-    response = service.update_consorcios(jsonData)
+    response = service.update_consorcios(operadoras)
     return (
         MutationResponseDTO(
             message="Consórcios atualizados com sucesso", counter=response
@@ -98,7 +102,7 @@ def execute_route_put_consorcio(json: ConsorcioListRequestDTO):
     tags=["Consórcio"],
 )
 def execute_route_delete_consorcio(id_consorcio: str):
-    """Rota para deletar um consórcio pelo ID"""
+    """Route to delete a consórcio by ID."""
     service = _get_service()
     response = service.delete_consorcio(id_consorcio)
     return (

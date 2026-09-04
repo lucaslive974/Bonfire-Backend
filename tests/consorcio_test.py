@@ -7,7 +7,7 @@ import pytest
 class TestConsorcio:
     @patch("services.consorcio_service.ConsorcioService.get_consorcios")
     def test_get_route(self, mock_get, client, database):
-        """Testa se a rota GET /consorcio retorna a lista correta de consórcios"""
+        """Test that GET /consorcio route returns the correct list of consórcios."""
         mock_get.return_value = [
             {
                 "ID": 107,
@@ -25,7 +25,7 @@ class TestConsorcio:
 
     @patch("services.consorcio_service.ConsorcioService.get_consorcios")
     def test_get_v1_route(self, mock_get, client, database):
-        """Testa se a rota GET /v1/consorcio retorna a lista correta de consórcios"""
+        """Test that GET /v1/consorcio route returns the correct list of consórcios."""
         mock_get.return_value = [
             {
                 "ID": 107,
@@ -43,7 +43,7 @@ class TestConsorcio:
 
     @patch("services.consorcio_service.ConsorcioService.insert_consorcios")
     def test_insert_route(self, mock_insert, client, database):
-        """Testa se a rota POST /consorcio insere consórcios com sucesso"""
+        """Test that POST /consorcio route inserts consórcios successfully."""
         mock_insert.return_value = 1
 
         payload = [
@@ -62,7 +62,7 @@ class TestConsorcio:
 
     @patch("services.consorcio_service.ConsorcioService.update_consorcios")
     def test_patch_route(self, mock_update, client, database):
-        """Testa se a rota PATCH /consorcio atualiza consórcios com sucesso"""
+        """Test that PATCH /consorcio route updates consórcios successfully."""
         mock_update.return_value = 1
 
         payload = [
@@ -81,7 +81,7 @@ class TestConsorcio:
 
     @patch("services.consorcio_service.ConsorcioService.update_consorcios")
     def test_put_route(self, mock_update, client, database):
-        """Testa se a rota PUT /consorcio atualiza consórcios com sucesso"""
+        """Test that PUT /consorcio route updates consórcios successfully."""
         mock_update.return_value = 1
 
         payload = [
@@ -100,7 +100,7 @@ class TestConsorcio:
 
     @patch("services.consorcio_service.ConsorcioService.delete_consorcio")
     def test_delete_route(self, mock_delete, client, database):
-        """Testa se a rota DELETE /consorcio/<id> deleta consórcios com sucesso"""
+        """Test that DELETE /consorcio/<id> route deletes a consórcio successfully."""
         mock_delete.return_value = 1
 
         response = client.delete("/consorcio/107")
@@ -110,8 +110,8 @@ class TestConsorcio:
         assert data["counter"] == 1
 
     def test_insert_route_validation_error(self, client, database):
-        """Testa se a validação do Pydantic/SpecTree retorna 422 em payload inválido"""
-        # Payload com campo NOME faltando
+        """Test that Pydantic/SpecTree validation returns 422 on invalid payload."""
+        # Payload missing required NOME field
         invalid_payload = [
             {
                 "ID": 107,

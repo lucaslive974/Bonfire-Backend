@@ -2,7 +2,7 @@ from sys import argv, exit
 
 from keycloak import KeycloakOpenID
 
-from classes.Config import config
+from core.config import config
 
 usage_msg = """usage: user password"""
 

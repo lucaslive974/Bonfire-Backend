@@ -1,9 +1,12 @@
-from typing import Any, Dict, List, Optional, Union
+from datetime import datetime
+from typing import List, Optional, Union
 
-from pydantic import BaseModel, Field, RootModel
+from pydantic import BaseModel, ConfigDict, Field, RootModel, field_serializer
 
 
 class LinhaItemDTO(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     COD_LINH: str = Field(..., description="Código identificador da linha")
     ID_OPERADORA: Optional[Union[int, str]] = Field(
         None, description="Identificador da operadora associada"
@@ -14,21 +17,29 @@ class LinhaItemDTO(BaseModel):
     LINH_ATIV_EMPR: Optional[bool] = Field(
         True, description="Indica se a linha está ativa na empresa"
     )
-    DAT_BAIX: Optional[str] = Field(None, description="Data de baixa da linha")
+    DAT_BAIX: Optional[Union[datetime, str]] = Field(
+        None, description="Data de baixa da linha"
+    )
+
+    @field_serializer("DAT_BAIX", when_used="json")
+    def serialize_dt(self, dt: Optional[Union[datetime, str]]) -> Optional[str]:
+        return dt.isoformat() if isinstance(dt, datetime) else dt
 
 
 class LinhaListResponseDTO(BaseModel):
-    linha: List[Dict[str, Any]] = Field(..., description="Lista de linhas")
+    linha: List[LinhaItemDTO] = Field(..., description="Lista de linhas")
 
 
 class LinhaRequestDTO(BaseModel):
     COD_LINH: str = Field(..., description="Código identificador da linha")
-    ID_OPERADORA: Union[int, str] = Field(
-        ..., description="Identificador da operadora associada"
+    ID_OPERADORA: Optional[Union[int, str]] = Field(
+        None, description="Identificador da operadora associada"
     )
-    COMPARTILHADA: bool = Field(..., description="Indica se a linha é compartilhada")
-    LINH_ATIV_EMPR: bool = Field(
-        ..., description="Indica se a linha está ativa na empresa"
+    COMPARTILHADA: Optional[bool] = Field(
+        None, description="Indica se a linha é compartilhada"
+    )
+    LINH_ATIV_EMPR: Optional[bool] = Field(
+        None, description="Indica se a linha está ativa na empresa"
     )
     DAT_BAIX: Optional[str] = Field(None, description="Data de baixa da linha")
 

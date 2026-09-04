@@ -49,13 +49,13 @@ def test_veiculo_repository_insert_bulk():
     repo = VeiculoRepository(mock_db)
 
     payload = [
-        {"NUM_VEIC": 1111, "IDN_PLAC_VEIC": "OPC123", "VEIC_ATIV_EMPR": True},
-        {
-            "NUM_VEIC": 2222,
-            "IDN_PLAC_VEIC": "XYZ987",
-            "VEIC_ATIV_EMPR": False,
-            "DAT_BAIX": "2026-08-28T10:00:00",
-        },
+        Veiculo(NUM_VEIC=1111, IDN_PLAC_VEIC="OPC123", VEIC_ATIV_EMPR=True),
+        Veiculo(
+            NUM_VEIC=2222,
+            IDN_PLAC_VEIC="XYZ987",
+            VEIC_ATIV_EMPR=False,
+            DAT_BAIX="2026-08-28T10:00:00",
+        ),
     ]
 
     count = repo.insert_bulk(payload)
@@ -76,7 +76,7 @@ def test_veiculo_repository_update_bulk_deactivate():
     mock_model = repo._to_model(existing_veiculo)
     mock_db.query.return_value.filter.return_value.first.return_value = mock_model
 
-    payload = [{"NUM_VEIC": 1111, "VEIC_ATIV_EMPR": False}]
+    payload = [Veiculo(NUM_VEIC=1111, VEIC_ATIV_EMPR=False)]
 
     count = repo.update_bulk(payload)
     assert count == 1
@@ -98,7 +98,7 @@ def test_veiculo_repository_update_bulk_already_deactivated_raises_error():
     mock_model = repo._to_model(existing_veiculo)
     mock_db.query.return_value.filter.return_value.first.return_value = mock_model
 
-    payload = [{"NUM_VEIC": 1111, "VEIC_ATIV_EMPR": False}]
+    payload = [Veiculo(NUM_VEIC=1111, VEIC_ATIV_EMPR=False)]
 
     with pytest.raises(ErrUpdateData) as exc_info:
         repo.update_bulk(payload)
@@ -119,7 +119,7 @@ def test_veiculo_repository_update_bulk_reactivate():
     mock_model = repo._to_model(existing_veiculo)
     mock_db.query.return_value.filter.return_value.first.return_value = mock_model
 
-    payload = [{"NUM_VEIC": 1111, "VEIC_ATIV_EMPR": True}]
+    payload = [Veiculo(NUM_VEIC=1111, VEIC_ATIV_EMPR=True)]
 
     count = repo.update_bulk(payload)
     assert count == 1
@@ -143,15 +143,15 @@ def test_service_get_veiculos():
     service = VeiculoService(mock_db_manager)
     res = service.get_veiculos()
     assert len(res) == 1
-    assert res[0]["NUM_VEIC"] == 1111
-    assert res[0]["DAT_BAIX"] == "2026-08-28T12:00:00"
+    assert res[0].vehicle_number == 1111
+    assert res[0].to_dict()["DAT_BAIX"] == "2026-08-28T12:00:00"
 
 
 @pytest.mark.usefixtures("app", "client", "database")
 class TestVeiculos:
     @patch("services.veiculo_service.VeiculoService.get_veiculos")
     def test_get_route(self, mock_get, client, database):
-        """Testa se a rota GET /veiculos retorna 200 e a lista correta"""
+        """Test that GET /veiculos returns 200 and the correct list."""
         mock_get.return_value = [
             {
                 "NUM_VEIC": 1111,
@@ -172,7 +172,7 @@ class TestVeiculos:
 
     @patch("services.veiculo_service.VeiculoService.get_veiculos")
     def test_get_route_with_data_baixa(self, mock_get, client, database):
-        """Testa se a rota GET /veiculos retorna 200 com DAT_BAIX preenchido"""
+        """Test that GET /veiculos returns 200 with DAT_BAIX populated."""
         mock_get.return_value = [
             {
                 "NUM_VEIC": 2222,
@@ -193,7 +193,7 @@ class TestVeiculos:
 
     @patch("services.veiculo_service.VeiculoService.insert_veiculos")
     def test_insert_route(self, mock_insert, client, database):
-        """Testa a rota POST /veiculos"""
+        """Test POST /veiculos route."""
         mock_insert.return_value = 1
 
         payload = [
@@ -209,7 +209,7 @@ class TestVeiculos:
 
     @patch("services.veiculo_service.VeiculoService.update_veiculos")
     def test_update_route(self, mock_update, client, database):
-        """Testa a rota PATCH /veiculos"""
+        """Test PATCH /veiculos route."""
         mock_update.return_value = 1
 
         payload = [
@@ -225,7 +225,7 @@ class TestVeiculos:
 
     @patch("services.veiculo_service.VeiculoService.delete_veiculos")
     def test_delete_route(self, mock_delete, client, database):
-        """Testa a rota DELETE /veiculos/<NUM_VEIC>"""
+        """Test DELETE /veiculos/<NUM_VEIC> route."""
         mock_delete.return_value = 1
 
         response = client.delete("/veiculos/1111")
@@ -244,7 +244,7 @@ def test_veiculo_repository_insert_bulk_already_exists():
     mock_db.query.return_value.filter.return_value.all.return_value = [(1111,)]
     repo = VeiculoRepository(mock_db)
 
-    payload = [{"NUM_VEIC": 1111, "IDN_PLAC_VEIC": "OPC123", "VEIC_ATIV_EMPR": True}]
+    payload = [Veiculo(NUM_VEIC=1111, IDN_PLAC_VEIC="OPC123", VEIC_ATIV_EMPR=True)]
 
     with pytest.raises(ErrInsertData) as exc_info:
         repo.insert_bulk(payload)

@@ -109,7 +109,7 @@ class PyIngestionDocumentExtractor(DocumentExtractor):
         else:
             from exceptions.CustomExceptions import ErrInvalidFileData
 
-            # Fallback para encapsular a string do erro em uma CustomException
+            # Fallback to encapsulate error string in a CustomException
             self._last_error = ErrInvalidFileData(friendly_message=error_message)
 
     def _on_complete(self, session, successful_pages: int, total_pages: int, **kwargs):

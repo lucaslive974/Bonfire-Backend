@@ -5,20 +5,20 @@ from repositories.interfaces import IRepositoryManager
 
 
 class RecursoService:
-    """Serviço de domínio para casos de uso de Recursos de 1ª e 2ª instância."""
+    """Domain service for 1st and 2nd instance appeal use cases."""
 
     def __init__(self, db_manager: IRepositoryManager, parser_factory=None):
         self._parser_factory = parser_factory
         self._db_manager = db_manager
 
     def get_primeira_instancia(self, date: Any, ata: Any) -> List[Dict[str, Any]]:
-        """Retorna os recursos de primeira instância."""
+        """Return 1st instance appeals."""
         with self._db_manager.session() as session:
             repo = session.get_recurso_repository()
             return repo.get_primeira_instancia(date, ata)
 
     def get_segunda_instancia(self, date: Any) -> List[Dict[str, Any]]:
-        """Retorna os recursos de segunda instância."""
+        """Return 2nd instance appeals."""
         with self._db_manager.session() as session:
             repo = session.get_recurso_repository()
             return repo.get_segunda_instancia(date)
@@ -27,7 +27,7 @@ class RecursoService:
         self,
         recursos_primeira_instancia: List[Dict[str, Any]] | None,
     ) -> int:
-        """Insere no banco de dados uma lista de recursos de primeira instância."""
+        """Insert a list of 1st instance appeals into the database."""
         if recursos_primeira_instancia is None:
             raise ErrNullInsert(
                 "Lista de recursos vazia, nenhum registro inserido", 400
@@ -42,7 +42,7 @@ class RecursoService:
         self,
         recursos_segunda_instancia: List[Dict[str, Any]] | None,
     ) -> int:
-        """Insere no banco de dados uma lista de recursos de segunda instância."""
+        """Insert a list of 2nd instance appeals into the database."""
         if recursos_segunda_instancia is None:
             raise ErrNullInsert(
                 "Lista de recursos vazia, nenhum registro inserido", 400
