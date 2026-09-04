@@ -76,7 +76,7 @@ def test_linha_repository_insert_bulk():
     assert mock_db.add.call_count == 2
 
 
-def test_linha_repository_update_bulk_deactivate():
+def test_linha_repository_get_by_ids():
     mock_db = MagicMock()
     repo = LinhaRepository(mock_db)
 
@@ -88,20 +88,62 @@ def test_linha_repository_update_bulk_deactivate():
         DAT_BAIX=None,
     )
     mock_model = repo._to_model(existing_linha)
-    mock_db.query.return_value.filter.return_value.first.return_value = mock_model
+    mock_db.query.return_value.filter.return_value.all.return_value = [mock_model]
 
-    payload = [Linha(COD_LINH="61", LINH_ATIV_EMPR=False)]
-
-    count = repo.update_bulk(payload)
-    assert count == 1
-    assert mock_model.LINH_ATIV_EMPR is False
-    assert mock_model.DAT_BAIX is not None
-    assert isinstance(mock_model.DAT_BAIX, datetime)
+    result = repo.get_by_ids(["61"])
+    assert len(result) == 1
+    assert result[0].line_code == "61"
+    assert result[0].operator_id == 107
 
 
-def test_linha_repository_update_bulk_already_deactivated_raises_error():
+def test_linha_repository_update_bulk():
     mock_db = MagicMock()
     repo = LinhaRepository(mock_db)
+
+    payload = [
+        Linha(COD_LINH="61", ID_OPERADORA=107, COMPARTILHADA=True, LINH_ATIV_EMPR=True),
+        Linha(
+            COD_LINH="62", ID_OPERADORA=108, COMPARTILHADA=False, LINH_ATIV_EMPR=False
+        ),
+    ]
+
+    count = repo.update_bulk(payload)
+    assert count == 2
+    assert mock_db.merge.call_count == 2
+
+
+def test_linha_service_update_deactivate():
+    mock_db_manager = MagicMock()
+    mock_session = mock_db_manager.session.return_value.__enter__.return_value
+    mock_linha_repo = mock_session.get_linha_repository.return_value
+
+    existing_linha = Linha(
+        COD_LINH="61",
+        ID_OPERADORA=107,
+        COMPARTILHADA=True,
+        LINH_ATIV_EMPR=True,
+        DAT_BAIX=None,
+    )
+    mock_linha_repo.get_by_ids.return_value = [existing_linha]
+    mock_linha_repo.update_bulk.side_effect = lambda linhas: len(linhas)
+
+    service = LinhaService(mock_db_manager)
+    payload = [Linha(COD_LINH="61", LINH_ATIV_EMPR=False)]
+
+    count = service.update_linha(payload)
+    assert count == 1
+    mock_linha_repo.get_by_ids.assert_called_once_with(["61"])
+    mock_linha_repo.update_bulk.assert_called_once()
+    updated_linha = mock_linha_repo.update_bulk.call_args[0][0][0]
+    assert updated_linha.is_active() is False
+    assert updated_linha.get_deregistration_date() is not None
+    assert isinstance(updated_linha.get_deregistration_date(), datetime)
+
+
+def test_linha_service_update_already_deactivated_raises_error():
+    mock_db_manager = MagicMock()
+    mock_session = mock_db_manager.session.return_value.__enter__.return_value
+    mock_linha_repo = mock_session.get_linha_repository.return_value
 
     existing_linha = Linha(
         COD_LINH="61",
@@ -110,20 +152,21 @@ def test_linha_repository_update_bulk_already_deactivated_raises_error():
         LINH_ATIV_EMPR=False,
         DAT_BAIX=datetime(2026, 1, 1),
     )
-    mock_model = repo._to_model(existing_linha)
-    mock_db.query.return_value.filter.return_value.first.return_value = mock_model
+    mock_linha_repo.get_by_ids.return_value = [existing_linha]
 
+    service = LinhaService(mock_db_manager)
     payload = [Linha(COD_LINH="61", LINH_ATIV_EMPR=False)]
 
     with pytest.raises(ErrUpdateData) as exc_info:
-        repo.update_bulk(payload)
+        service.update_linha(payload)
     assert exc_info.value.status == 400
     assert "já se encontra baixada" in exc_info.value.message
 
 
-def test_linha_repository_update_bulk_reactivate():
-    mock_db = MagicMock()
-    repo = LinhaRepository(mock_db)
+def test_linha_service_update_reactivate():
+    mock_db_manager = MagicMock()
+    mock_session = mock_db_manager.session.return_value.__enter__.return_value
+    mock_linha_repo = mock_session.get_linha_repository.return_value
 
     existing_linha = Linha(
         COD_LINH="61",
@@ -132,15 +175,32 @@ def test_linha_repository_update_bulk_reactivate():
         LINH_ATIV_EMPR=False,
         DAT_BAIX=datetime(2026, 1, 1),
     )
-    mock_model = repo._to_model(existing_linha)
-    mock_db.query.return_value.filter.return_value.first.return_value = mock_model
+    mock_linha_repo.get_by_ids.return_value = [existing_linha]
+    mock_linha_repo.update_bulk.side_effect = lambda linhas: len(linhas)
 
+    service = LinhaService(mock_db_manager)
     payload = [Linha(COD_LINH="61", LINH_ATIV_EMPR=True)]
 
-    count = repo.update_bulk(payload)
+    count = service.update_linha(payload)
     assert count == 1
-    assert mock_model.LINH_ATIV_EMPR is True
-    assert mock_model.DAT_BAIX is None
+    updated_linha = mock_linha_repo.update_bulk.call_args[0][0][0]
+    assert updated_linha.is_active() is True
+    assert updated_linha.get_deregistration_date() is None
+
+
+def test_linha_service_update_operadora_not_found_raises_error():
+    mock_db_manager = MagicMock()
+    mock_session = mock_db_manager.session.return_value.__enter__.return_value
+    mock_consorcio_repo = mock_session.get_consorcio_repository.return_value
+    mock_consorcio_repo.get_by_ids.return_value = []
+
+    service = LinhaService(mock_db_manager)
+    payload = [Linha(COD_LINH="61", ID_OPERADORA=999)]
+
+    with pytest.raises(ErrUpdateData) as exc_info:
+        service.update_linha(payload)
+    assert exc_info.value.status == 400
+    assert "Operadora inexistente" in exc_info.value.message
 
 
 def test_service_get_linha():

@@ -36,6 +36,10 @@ class IVeiculoRepository(ABC):
         pass
 
     @abstractmethod
+    def get_by_ids(self, num_veics: List[int]) -> List[Veiculo]:
+        pass
+
+    @abstractmethod
     def insert(self, veiculo: Any) -> bool:
         pass
 
@@ -62,6 +66,10 @@ class ILinhaRepository(ABC):
         pass
 
     @abstractmethod
+    def get_by_ids(self, cod_linhas: List[str]) -> List[Linha]:
+        pass
+
+    @abstractmethod
     def insert_bulk(self, linhas: List[Linha]) -> int:
         pass
 
@@ -81,6 +89,10 @@ class IConsorcioRepository(ABC):
 
     @abstractmethod
     def get_by_id(self, id_consorcio: int) -> Any:
+        pass
+
+    @abstractmethod
+    def get_by_ids(self, ids_consorcios: List[int]) -> List[Operadora]:
         pass
 
     @abstractmethod

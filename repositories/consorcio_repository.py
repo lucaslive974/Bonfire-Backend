@@ -41,6 +41,17 @@ class ConsorcioRepository(IConsorcioRepository):
         )
         return self._to_domain(model)
 
+    def get_by_ids(self, ids_consorcios: List[int]) -> List[Operadora]:
+        """Find operators (consórcios) by a list of IDs."""
+        if not ids_consorcios:
+            return []
+        models = (
+            self.db.query(OperadoraModel)
+            .filter(OperadoraModel.ID.in_(ids_consorcios))
+            .all()
+        )
+        return [self._to_domain(m) for m in models if m is not None]
+
     def insert_bulk(self, consorcios: List[Operadora]) -> int:
         """Insert or merge a list of consórcio entities into the database."""
         counter = 0
@@ -51,26 +62,13 @@ class ConsorcioRepository(IConsorcioRepository):
         return counter
 
     def update_bulk(self, consorcios: List[Operadora]) -> int:
-        """Update fields for a list of consórcio entities in the database."""
+        """Persist updated consórcio entities in the database."""
         counter = 0
         for item in consorcios:
-            if item.ID is not None:
-                model = (
-                    self.db.query(OperadoraModel)
-                    .filter(OperadoraModel.ID == item.ID)
-                    .first()
-                )
-                if model:
-                    operadora = self._to_domain(model)
-                    if operadora:
-                        if item.name is not None:
-                            operadora.set_name(item.name)
-                        if item.concessionaire is not None:
-                            operadora.set_concessionaire(item.concessionaire)
-                        model.NOME = operadora.get_name()
-                        model.CONCESSIONARIA = operadora.get_concessionaire()
-                        self.db.merge(model)
-                        counter += 1
+            if item.id is not None:
+                model = self._to_model(item)
+                self.db.merge(model)
+                counter += 1
         return counter
 
     def delete(self, id_consorcio: int) -> int:

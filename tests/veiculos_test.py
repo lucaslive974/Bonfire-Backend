@@ -63,7 +63,7 @@ def test_veiculo_repository_insert_bulk():
     assert mock_db.add.call_count == 2
 
 
-def test_veiculo_repository_update_bulk_deactivate():
+def test_veiculo_repository_get_by_ids():
     mock_db = MagicMock()
     repo = VeiculoRepository(mock_db)
 
@@ -74,20 +74,59 @@ def test_veiculo_repository_update_bulk_deactivate():
         DAT_BAIX=None,
     )
     mock_model = repo._to_model(existing_veiculo)
-    mock_db.query.return_value.filter.return_value.first.return_value = mock_model
+    mock_db.query.return_value.filter.return_value.all.return_value = [mock_model]
 
-    payload = [Veiculo(NUM_VEIC=1111, VEIC_ATIV_EMPR=False)]
-
-    count = repo.update_bulk(payload)
-    assert count == 1
-    assert mock_model.VEIC_ATIV_EMPR is False
-    assert mock_model.DAT_BAIX is not None
-    assert isinstance(mock_model.DAT_BAIX, datetime)
+    result = repo.get_by_ids([1111])
+    assert len(result) == 1
+    assert result[0].vehicle_number == 1111
+    assert result[0].license_plate == "OPC123"
 
 
-def test_veiculo_repository_update_bulk_already_deactivated_raises_error():
+def test_veiculo_repository_update_bulk():
     mock_db = MagicMock()
     repo = VeiculoRepository(mock_db)
+
+    payload = [
+        Veiculo(NUM_VEIC=1111, IDN_PLAC_VEIC="OPC123", VEIC_ATIV_EMPR=True),
+        Veiculo(NUM_VEIC=2222, IDN_PLAC_VEIC="XYZ987", VEIC_ATIV_EMPR=False),
+    ]
+
+    count = repo.update_bulk(payload)
+    assert count == 2
+    assert mock_db.merge.call_count == 2
+
+
+def test_veiculo_service_update_deactivate():
+    mock_db_manager = MagicMock()
+    mock_session = mock_db_manager.session.return_value.__enter__.return_value
+    mock_repo = mock_session.get_veiculo_repository.return_value
+
+    existing_veiculo = Veiculo(
+        NUM_VEIC=1111,
+        IDN_PLAC_VEIC="OPC123",
+        VEIC_ATIV_EMPR=True,
+        DAT_BAIX=None,
+    )
+    mock_repo.get_by_ids.return_value = [existing_veiculo]
+    mock_repo.update_bulk.side_effect = lambda veics: len(veics)
+
+    service = VeiculoService(mock_db_manager)
+    payload = [Veiculo(NUM_VEIC=1111, VEIC_ATIV_EMPR=False)]
+
+    count = service.update_veiculos(payload)
+    assert count == 1
+    mock_repo.get_by_ids.assert_called_once_with([1111])
+    mock_repo.update_bulk.assert_called_once()
+    updated_veiculo = mock_repo.update_bulk.call_args[0][0][0]
+    assert updated_veiculo.is_active() is False
+    assert updated_veiculo.get_deregistration_date() is not None
+    assert isinstance(updated_veiculo.get_deregistration_date(), datetime)
+
+
+def test_veiculo_service_update_already_deactivated_raises_error():
+    mock_db_manager = MagicMock()
+    mock_session = mock_db_manager.session.return_value.__enter__.return_value
+    mock_repo = mock_session.get_veiculo_repository.return_value
 
     existing_veiculo = Veiculo(
         NUM_VEIC=1111,
@@ -95,20 +134,21 @@ def test_veiculo_repository_update_bulk_already_deactivated_raises_error():
         VEIC_ATIV_EMPR=False,
         DAT_BAIX=datetime(2026, 1, 1),
     )
-    mock_model = repo._to_model(existing_veiculo)
-    mock_db.query.return_value.filter.return_value.first.return_value = mock_model
+    mock_repo.get_by_ids.return_value = [existing_veiculo]
 
+    service = VeiculoService(mock_db_manager)
     payload = [Veiculo(NUM_VEIC=1111, VEIC_ATIV_EMPR=False)]
 
     with pytest.raises(ErrUpdateData) as exc_info:
-        repo.update_bulk(payload)
+        service.update_veiculos(payload)
     assert exc_info.value.status == 400
     assert "já se encontra baixado" in exc_info.value.message
 
 
-def test_veiculo_repository_update_bulk_reactivate():
-    mock_db = MagicMock()
-    repo = VeiculoRepository(mock_db)
+def test_veiculo_service_update_reactivate():
+    mock_db_manager = MagicMock()
+    mock_session = mock_db_manager.session.return_value.__enter__.return_value
+    mock_repo = mock_session.get_veiculo_repository.return_value
 
     existing_veiculo = Veiculo(
         NUM_VEIC=1111,
@@ -116,15 +156,17 @@ def test_veiculo_repository_update_bulk_reactivate():
         VEIC_ATIV_EMPR=False,
         DAT_BAIX=datetime(2026, 1, 1),
     )
-    mock_model = repo._to_model(existing_veiculo)
-    mock_db.query.return_value.filter.return_value.first.return_value = mock_model
+    mock_repo.get_by_ids.return_value = [existing_veiculo]
+    mock_repo.update_bulk.side_effect = lambda veics: len(veics)
 
+    service = VeiculoService(mock_db_manager)
     payload = [Veiculo(NUM_VEIC=1111, VEIC_ATIV_EMPR=True)]
 
-    count = repo.update_bulk(payload)
+    count = service.update_veiculos(payload)
     assert count == 1
-    assert mock_model.VEIC_ATIV_EMPR is True
-    assert mock_model.DAT_BAIX is None
+    updated_veiculo = mock_repo.update_bulk.call_args[0][0][0]
+    assert updated_veiculo.is_active() is True
+    assert updated_veiculo.get_deregistration_date() is None
 
 
 def test_service_get_veiculos():
