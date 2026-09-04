@@ -11,7 +11,7 @@ from alembic import context
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 # Load the project config and base metadata
-from classes.Config import config as app_config
+from core.config import config as app_config
 from repositories.models.Base import Base
 
 # this is the Alembic Config object, which provides

@@ -1,7 +1,7 @@
-from flask import Blueprint, current_app
+from flask import Blueprint
 
-from exceptions.CustomExceptions import ErrIncompleteData
 from routes.spec import spec
+from routes.v1.dependencies import get_recurso_service
 from routes.v1.schemas.common import MutationResponseDTO, create_api_response
 from routes.v1.schemas.recursos import (
     RecursoListResponseDTO,
@@ -13,13 +13,7 @@ from routes.v1.schemas.recursos import (
 
 RecursoPrimeiraInstanciaBlueprint = Blueprint("recurso1", __name__)
 RecuroSegundaInstanciaBlueprint = Blueprint("recurso2", __name__)
-
-
-def _get_service():
-    factory = current_app.extensions.get("service_factory")
-    if not factory:
-        raise ErrIncompleteData("ServiceFactory not configured", 500)
-    return factory.get_recurso_service()
+_get_service = get_recurso_service
 
 
 @RecursoPrimeiraInstanciaBlueprint.route(

@@ -56,19 +56,19 @@ def test_linha_repository_insert_bulk():
     repo = LinhaRepository(mock_db)
 
     payload = [
-        {
-            "COD_LINH": "61",
-            "ID_OPERADORA": 107,
-            "COMPARTILHADA": True,
-            "LINH_ATIV_EMPR": True,
-        },
-        {
-            "COD_LINH": "62",
-            "ID_OPERADORA": 108,
-            "COMPARTILHADA": False,
-            "LINH_ATIV_EMPR": False,
-            "DAT_BAIX": "2026-08-28T10:00:00",
-        },
+        Linha(
+            COD_LINH="61",
+            ID_OPERADORA=107,
+            COMPARTILHADA=True,
+            LINH_ATIV_EMPR=True,
+        ),
+        Linha(
+            COD_LINH="62",
+            ID_OPERADORA=108,
+            COMPARTILHADA=False,
+            LINH_ATIV_EMPR=False,
+            DAT_BAIX="2026-08-28T10:00:00",
+        ),
     ]
 
     count = repo.insert_bulk(payload)
@@ -90,7 +90,7 @@ def test_linha_repository_update_bulk_deactivate():
     mock_model = repo._to_model(existing_linha)
     mock_db.query.return_value.filter.return_value.first.return_value = mock_model
 
-    payload = [{"COD_LINH": "61", "LINH_ATIV_EMPR": False}]
+    payload = [Linha(COD_LINH="61", LINH_ATIV_EMPR=False)]
 
     count = repo.update_bulk(payload)
     assert count == 1
@@ -113,7 +113,7 @@ def test_linha_repository_update_bulk_already_deactivated_raises_error():
     mock_model = repo._to_model(existing_linha)
     mock_db.query.return_value.filter.return_value.first.return_value = mock_model
 
-    payload = [{"COD_LINH": "61", "LINH_ATIV_EMPR": False}]
+    payload = [Linha(COD_LINH="61", LINH_ATIV_EMPR=False)]
 
     with pytest.raises(ErrUpdateData) as exc_info:
         repo.update_bulk(payload)
@@ -135,7 +135,7 @@ def test_linha_repository_update_bulk_reactivate():
     mock_model = repo._to_model(existing_linha)
     mock_db.query.return_value.filter.return_value.first.return_value = mock_model
 
-    payload = [{"COD_LINH": "61", "LINH_ATIV_EMPR": True}]
+    payload = [Linha(COD_LINH="61", LINH_ATIV_EMPR=True)]
 
     count = repo.update_bulk(payload)
     assert count == 1
@@ -160,15 +160,15 @@ def test_service_get_linha():
     service = LinhaService(mock_db_manager)
     res = service.get_linha()
     assert len(res) == 1
-    assert res[0]["COD_LINH"] == "61"
-    assert res[0]["DAT_BAIX"] == "2026-08-28T12:00:00"
+    assert res[0].line_code == "61"
+    assert res[0].to_dict()["DAT_BAIX"] == "2026-08-28T12:00:00"
 
 
 @pytest.mark.usefixtures("app", "client", "database")
 class TestLinha:
     @patch("services.linha_service.LinhaService.get_linha")
     def test_get_route(self, mock_get, client, database):
-        """Testa se a rota GET /linha retorna a lista correta de linhas"""
+        """Test that GET /linha returns the correct list of lines."""
         mock_get.return_value = [
             {
                 "COD_LINH": "61",
@@ -189,7 +189,7 @@ class TestLinha:
 
     @patch("services.linha_service.LinhaService.get_linha")
     def test_get_route_with_data_baixa(self, mock_get, client, database):
-        """Testa se a rota GET /linha retorna a lista com DAT_BAIX preenchido"""
+        """Test that GET /linha returns list with DAT_BAIX populated."""
         mock_get.return_value = [
             {
                 "COD_LINH": "62",
@@ -210,7 +210,7 @@ class TestLinha:
 
     @patch("services.linha_service.LinhaService.insert_linha")
     def test_insert_route(self, mock_insert, client, database):
-        """Testa se a rota POST /linha insere linhas com sucesso"""
+        """Test that POST /linha inserts lines successfully."""
         mock_insert.return_value = 1
 
         payload = [
@@ -230,7 +230,7 @@ class TestLinha:
 
     @patch("services.linha_service.LinhaService.update_linha")
     def test_update_route(self, mock_update, client, database):
-        """Testa se a rota PATCH /linha atualiza linhas com sucesso"""
+        """Test that PATCH /linha updates lines successfully."""
         mock_update.return_value = 1
 
         payload = [
@@ -250,7 +250,7 @@ class TestLinha:
 
     @patch("services.linha_service.LinhaService.delete_linha")
     def test_delete_route(self, mock_delete, client, database):
-        """Testa se a rota DELETE /linha/<COD_LINH> deleta linhas com sucesso"""
+        """Test that DELETE /linha/<COD_LINH> deletes line successfully."""
         mock_delete.return_value = 1
 
         response = client.delete("/linha/61")
@@ -272,12 +272,12 @@ def test_linha_repository_insert_bulk_already_exists():
     repo = LinhaRepository(mock_db)
 
     payload = [
-        {
-            "COD_LINH": "61",
-            "ID_OPERADORA": 107,
-            "COMPARTILHADA": True,
-            "LINH_ATIV_EMPR": True,
-        }
+        Linha(
+            COD_LINH="61",
+            ID_OPERADORA=107,
+            COMPARTILHADA=True,
+            LINH_ATIV_EMPR=True,
+        )
     ]
 
     with pytest.raises(ErrInsertData) as exc_info:

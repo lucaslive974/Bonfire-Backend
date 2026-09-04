@@ -2,7 +2,7 @@ from typing import Any
 
 
 class CustomException(Exception):
-    """Classe básica para as exceções customizadas da aplicação"""
+    """Base class for custom application exceptions."""
 
     def __init__(
         self,
@@ -13,9 +13,9 @@ class CustomException(Exception):
     ) -> None:
         super().__init__(message)
         self.error = error
-        self.message = message  # Informação detalhada/interna para logs
+        self.message = message  # Detailed/internal information for logging
         self.status = status
-        self.friendly_message = friendly_message  # Mensagem limpa enviada ao usuário
+        self.friendly_message = friendly_message  # Sanitized user-facing message
         self.counter = None
 
     def __iter__(self):

@@ -1,7 +1,7 @@
-from flask import Blueprint, current_app
+from flask import Blueprint
 
-from exceptions.CustomExceptions import ErrIncompleteData
 from routes.spec import spec
+from routes.v1.dependencies import get_autoinfracao_service
 from routes.v1.schemas.autoinfracao import (
     InfracaoCheckResponseDTO,
     InfracaoCheckUploadDTO,
@@ -15,13 +15,7 @@ from routes.v1.schemas.autoinfracao import (
 from routes.v1.schemas.common import create_api_response
 
 AutoInfracaoBlueprint = Blueprint("infracao", __name__)
-
-
-def _get_service():
-    factory = current_app.extensions.get("service_factory")
-    if not factory:
-        raise ErrIncompleteData("ServiceFactory not configured", 500)
-    return factory.get_autoinfracao_service()
+_get_service = get_autoinfracao_service
 
 
 @AutoInfracaoBlueprint.route("/infracao/csv", methods=["POST"])
@@ -86,7 +80,7 @@ def get_infracoes(query: InfracaoQueryDTO):
 )
 def check_infracoes(form: InfracaoCheckUploadDTO):
     service = _get_service()
-    db_rows, file_rows, rows_not_present = service.check_infracoes(form.file)
+    db_rows, file_rows, rows_not_present = service.check_infracoes(form.file.stream)
     return (
         InfracaoCheckResponseDTO(
             db_rows=f"{db_rows} Entries found in Database",

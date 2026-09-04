@@ -1,38 +1,36 @@
-from typing import Any, Dict, List
+from typing import List
 
+from classes.Veiculo import Veiculo
 from exceptions.CustomExceptions import ErrUpdateData
 from repositories.interfaces import IRepositoryManager
 
 
 class VeiculoService:
-    """Serviço de domínio para casos de uso de Veículos."""
+    """Domain service for Vehicle use cases."""
 
     def __init__(self, db_manager: IRepositoryManager):
         self._db_manager = db_manager
 
-    def get_veiculos(self) -> List[Dict[str, Any]]:
-        """Recupera os veículos do banco de dados."""
+    def get_veiculos(self) -> List[Veiculo]:
+        """Retrieve vehicles from the database as domain entities."""
         with self._db_manager.session() as session:
             repo = session.get_veiculo_repository()
-            veiculos = repo.get_all()
-            return [v.as_dict() for v in veiculos]
+            return repo.get_all()
 
-    def insert_veiculos(self, veiculos_data: List[Dict[str, Any]]) -> int:
-        """Insere uma lista de veículos no banco de dados."""
+    def insert_veiculos(self, veiculos: List[Veiculo]) -> int:
+        """Insert a list of vehicle domain entities into the database."""
         with self._db_manager.session() as session:
             repo = session.get_veiculo_repository()
-            count = repo.insert_bulk(veiculos_data)
-            return count
+            return repo.insert_bulk(veiculos)
 
-    def update_veiculos(self, veiculos_data: List[Dict[str, Any]]) -> int:
-        """Atualiza uma lista de veículos no banco de dados."""
+    def update_veiculos(self, veiculos: List[Veiculo]) -> int:
+        """Update a list of vehicle domain entities in the database."""
         with self._db_manager.session() as session:
             repo = session.get_veiculo_repository()
-            count = repo.update_bulk(veiculos_data)
-            return count
+            return repo.update_bulk(veiculos)
 
     def delete_veiculos(self, num_veic: str | int) -> int:
-        """Deleta um veículo no banco de dados pelo seu número."""
+        """Delete a vehicle from the database by its vehicle number."""
         try:
             num_veic_int = int(num_veic)
         except ValueError:
@@ -40,5 +38,4 @@ class VeiculoService:
 
         with self._db_manager.session() as session:
             repo = session.get_veiculo_repository()
-            count = repo.delete(num_veic_int)
-            return count
+            return repo.delete(num_veic_int)

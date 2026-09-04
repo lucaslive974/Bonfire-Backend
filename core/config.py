@@ -39,7 +39,7 @@ class Config:
                 raise AttributeError
             return val
         except AttributeError:
-            raise KeyError(f"Variável de configuração '{item}' não encontrada.")
+            raise KeyError(f"Configuration variable '{item}' not found.")
 
     def __setitem__(self, key: str, value):
         try:
@@ -52,7 +52,7 @@ class Config:
             setattr(self, key, value)
 
         except AttributeError:
-            raise KeyError(f"Não é permitido definir/alterar a variável '{key}'.")
+            raise KeyError(f"Cannot set or modify variable '{key}'.")
 
 
 config = Config()

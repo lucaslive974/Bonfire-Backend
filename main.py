@@ -1,7 +1,7 @@
 from waitress import serve
 
 from app import BonfireApp
-from classes.BonfireArgumentParser import BonfireArgumentParser
+from core.cli import BonfireArgumentParser
 from utils.logger import logger
 
 if __name__ == "__main__":

@@ -1,11 +1,9 @@
 from datetime import datetime
-from typing import Any
-
-from classes.Mixins import SerializableMixin
+from typing import Any, Dict, Iterator, Tuple
 
 
-class AutoInfracao(SerializableMixin):
-    """Entidade pura de domínio para Auto de Infração."""
+class AutoInfracao:
+    """Pure domain entity for Traffic Infraction Notice."""
 
     def __init__(
         self,
@@ -62,3 +60,21 @@ class AutoInfracao(SerializableMixin):
             except ValueError:
                 return None
         return value
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert entity attributes to a dictionary representation."""
+        result: Dict[str, Any] = {}
+        for key, value in self.__dict__.items():
+            if key.startswith("_"):
+                continue
+            if isinstance(value, datetime):
+                result[key] = value.isoformat()
+            else:
+                result[key] = value
+        return result
+
+    as_dict = to_dict
+
+    def __iter__(self) -> Iterator[Tuple[str, Any]]:
+        """Allow dict(instance) conversion."""
+        yield from self.to_dict().items()

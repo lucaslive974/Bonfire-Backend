@@ -27,7 +27,7 @@ class SyncBatchProcessor:
         self.dlq = DeadLetterQueue()
 
     def start(self):
-        # Manteve para compatibilidade de interface
+        # Retained for interface compatibility
         pass
 
     def publish(self, item: Any):

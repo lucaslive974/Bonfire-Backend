@@ -1,10 +1,16 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Tuple
+
+if TYPE_CHECKING:
+    from classes.AutoInfracao import AutoInfracao
+    from classes.Linha import Linha
+    from classes.Operadora import Operadora
+    from classes.Veiculo import Veiculo
 
 
 class IAutoInfracaoRepository(ABC):
     @abstractmethod
-    def get_infracoes(self, date: Any, ai: Any) -> List[Any]:
+    def get_infracoes(self, date: Any, ai: Any) -> List[AutoInfracao]:
         pass
 
     @abstractmethod
@@ -22,7 +28,7 @@ class IAutoInfracaoRepository(ABC):
 
 class IVeiculoRepository(ABC):
     @abstractmethod
-    def get_all(self) -> List[Any]:
+    def get_all(self) -> List[Veiculo]:
         pass
 
     @abstractmethod
@@ -34,11 +40,11 @@ class IVeiculoRepository(ABC):
         pass
 
     @abstractmethod
-    def insert_bulk(self, veiculos_data: List[Dict[str, Any]]) -> int:
+    def insert_bulk(self, veiculos: List[Veiculo]) -> int:
         pass
 
     @abstractmethod
-    def update_bulk(self, veiculos_data: List[Dict[str, Any]]) -> int:
+    def update_bulk(self, veiculos: List[Veiculo]) -> int:
         pass
 
     @abstractmethod
@@ -48,7 +54,7 @@ class IVeiculoRepository(ABC):
 
 class ILinhaRepository(ABC):
     @abstractmethod
-    def get_all(self) -> List[Any]:
+    def get_all(self) -> List[Linha]:
         pass
 
     @abstractmethod
@@ -56,11 +62,11 @@ class ILinhaRepository(ABC):
         pass
 
     @abstractmethod
-    def insert_bulk(self, linhas_data: List[Dict[str, Any]]) -> int:
+    def insert_bulk(self, linhas: List[Linha]) -> int:
         pass
 
     @abstractmethod
-    def update_bulk(self, linhas_data: List[Dict[str, Any]]) -> int:
+    def update_bulk(self, linhas: List[Linha]) -> int:
         pass
 
     @abstractmethod
@@ -70,7 +76,7 @@ class ILinhaRepository(ABC):
 
 class IConsorcioRepository(ABC):
     @abstractmethod
-    def get_all(self) -> List[Any]:
+    def get_all(self) -> List[Operadora]:
         pass
 
     @abstractmethod
@@ -78,11 +84,11 @@ class IConsorcioRepository(ABC):
         pass
 
     @abstractmethod
-    def insert_bulk(self, consorcios_data: List[Dict[str, Any]]) -> int:
+    def insert_bulk(self, consorcios: List[Operadora]) -> int:
         pass
 
     @abstractmethod
-    def update_bulk(self, consorcios_data: List[Dict[str, Any]]) -> int:
+    def update_bulk(self, consorcios: List[Operadora]) -> int:
         pass
 
     @abstractmethod

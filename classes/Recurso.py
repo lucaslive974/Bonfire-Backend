@@ -1,11 +1,9 @@
 from datetime import date, datetime
-from typing import Any
-
-from classes.Mixins import SerializableMixin
+from typing import Any, Dict, Iterator, Tuple
 
 
-class RecursoPrimeiraInstancia(SerializableMixin):
-    """Entidade pura de domínio para Recurso de Primeira Instância."""
+class RecursoPrimeiraInstancia:
+    """Pure domain entity for First Instance Appeal."""
 
     def __init__(
         self,
@@ -43,9 +41,27 @@ class RecursoPrimeiraInstancia(SerializableMixin):
             return value.date()
         return value
 
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert entity attributes to a dictionary representation."""
+        result: Dict[str, Any] = {}
+        for key, value in self.__dict__.items():
+            if key.startswith("_"):
+                continue
+            if isinstance(value, (datetime, date)):
+                result[key] = value.isoformat()
+            else:
+                result[key] = value
+        return result
 
-class RecursoSegundaInstancia(SerializableMixin):
-    """Entidade pura de domínio para Recurso de Segunda Instância."""
+    as_dict = to_dict
+
+    def __iter__(self) -> Iterator[Tuple[str, Any]]:
+        """Allow dict(instance) conversion."""
+        yield from self.to_dict().items()
+
+
+class RecursoSegundaInstancia:
+    """Pure domain entity for Second Instance Appeal."""
 
     def __init__(
         self,
@@ -80,3 +96,21 @@ class RecursoSegundaInstancia(SerializableMixin):
         if isinstance(value, datetime):
             return value.date()
         return value
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert entity attributes to a dictionary representation."""
+        result: Dict[str, Any] = {}
+        for key, value in self.__dict__.items():
+            if key.startswith("_"):
+                continue
+            if isinstance(value, (datetime, date)):
+                result[key] = value.isoformat()
+            else:
+                result[key] = value
+        return result
+
+    as_dict = to_dict
+
+    def __iter__(self) -> Iterator[Tuple[str, Any]]:
+        """Allow dict(instance) conversion."""
+        yield from self.to_dict().items()
