@@ -4,12 +4,16 @@ from unittest.mock import MagicMock
 import pandas as pd
 import pytest
 from docx import Document
+from docx.document import Document as DocxDocument
+from docx.table import Table
+from docx.text.paragraph import Paragraph
 
 from domain.entities import AutoInfracao
 from infrastructure.parsers.exceptions import (
     DocumentReadError,
     IncorrectInstanceError,
     InvalidDocumentDataError,
+    PublicationDateNotFoundError,
     QuantityOfAtasMismatchError,
 )
 from infrastructure.parsers.pyingestion.streams import (
@@ -182,28 +186,6 @@ def test_infracoes_transform_missing_dat_limt_recu():
 # ==========================================
 
 
-def test_docx_stream_segunda_instancia_with_atas_raises_incorrect_instance():
-    doc = Document()
-    doc.add_paragraph(
-        "PUBLICADO NO DIARIO OFICIAL DO MUNICIPIO DE BELO HORIZONTE EM 01/01/2026"
-    )
-    doc.add_paragraph("ATA DA 10ª SESSÃO")
-
-    stream = RecursosDocxInputStream(first_instance=False)
-    with pytest.raises(IncorrectInstanceError):
-        stream.extract_atas(doc)
-
-
-def test_docx_stream_atas_tables_mismatch():
-    doc = Document()
-    doc.add_paragraph("ATA DA 10ª SESSÃO")
-    doc.add_paragraph("ATA DA 11ª SESSÃO")
-    # 2 atas found, but 0 tables exist in doc
-    stream = RecursosDocxInputStream(first_instance=True)
-    with pytest.raises(QuantityOfAtasMismatchError):
-        stream.extract_atas(doc)
-
-
 def test_docx_stream_empty_num_recurso():
     doc = Document()
     table = doc.add_table(rows=2, cols=4)
@@ -222,3 +204,202 @@ def test_docx_stream_empty_num_recurso():
     with pytest.raises(InvalidDocumentDataError) as exc_info:
         list(stream.process_table(table, "2026-01-01", 1))
     assert "número do recurso está vazio" in str(exc_info.value)
+
+
+def _create_sample_doc_stream(doc: DocxDocument) -> BytesIO:
+    stream = BytesIO()
+    doc.save(stream)
+    stream.seek(0)
+    return stream
+
+
+def _populate_test_table(
+    table: Table, rows_data: list[tuple[str, str, str, str]]
+) -> None:
+    table.cell(0, 0).text = "RECURSO"
+    table.cell(0, 1).text = "AUTO DE INFRAÇÃO"
+    table.cell(0, 2).text = "RECORRENTE"
+    table.cell(0, 3).text = "DECISÃO"
+    for row_idx, data in enumerate(rows_data, start=1):
+        for col_idx, val in enumerate(data):
+            table.cell(row_idx, col_idx).text = val
+
+
+def test_iter_block_items_preserves_order():
+    doc = Document()
+    doc.add_paragraph("Paragraph 1")
+    doc.add_table(rows=1, cols=1)
+    doc.add_paragraph("Paragraph 2")
+    doc.add_table(rows=1, cols=1)
+    doc.add_table(rows=1, cols=1)
+
+    parser = RecursosDocxInputStream()
+    items = list(parser._iter_block_items(doc))
+    assert len(items) == 5
+
+    assert isinstance(items[0], Paragraph)
+    assert items[0].text == "Paragraph 1"
+    assert isinstance(items[1], Table)
+    assert isinstance(items[2], Paragraph)
+    assert items[2].text == "Paragraph 2"
+    assert isinstance(items[3], Table)
+    assert isinstance(items[4], Table)
+
+
+def test_docx_stream_one_ata_multiple_tables():
+    doc = Document()
+    doc.add_paragraph(
+        "PUBLICADO NO DIARIO OFICIAL DO MUNICIPIO DE BELO HORIZONTE EM 15/05/2026"
+    )
+    doc.add_paragraph("ATA DA 5ª SESSÃO ORDINÁRIA")
+
+    t1 = doc.add_table(rows=2, cols=4)
+    _populate_test_table(t1, [("101/2026", "11111A", "Consórcio 1", "IMPROCEDENTE")])
+
+    t2 = doc.add_table(rows=2, cols=4)
+    _populate_test_table(t2, [("102/2026", "22222A", "Consórcio 2", "PROCEDENTE")])
+
+    t3 = doc.add_table(rows=2, cols=4)
+    _populate_test_table(t3, [("103/2026", "33333A", "Consórcio 3", "PROCEDENTE")])
+
+    stream = RecursosDocxInputStream(first_instance=True)
+    results = list(stream.read(_create_sample_doc_stream(doc)))
+
+    assert len(results) == 3
+    assert results[0]["NUM_ATA"] == "5"
+    assert results[0]["NUM_RECURSO"] == "101/2026"
+    assert results[1]["NUM_ATA"] == "5"
+    assert results[1]["NUM_RECURSO"] == "102/2026"
+    assert results[2]["NUM_ATA"] == "5"
+    assert results[2]["NUM_RECURSO"] == "103/2026"
+
+
+def test_docx_stream_multiple_atas_multiple_tables():
+    doc = Document()
+    doc.add_paragraph(
+        "PUBLICADO NO DIARIO OFICIAL DO MUNICIPIO DE BELO HORIZONTE EM 15/05/2026"
+    )
+    doc.add_paragraph("ATA DA 10ª SESSÃO")
+
+    t1 = doc.add_table(rows=2, cols=4)
+    _populate_test_table(t1, [("101/2026", "11111A", "Consórcio 1", "IMPROCEDENTE")])
+
+    t2 = doc.add_table(rows=2, cols=4)
+    _populate_test_table(t2, [("102/2026", "22222A", "Consórcio 2", "PROCEDENTE")])
+
+    doc.add_paragraph("ATA DA 11ª SESSÃO")
+
+    t3 = doc.add_table(rows=2, cols=4)
+    _populate_test_table(t3, [("103/2026", "33333A", "Consórcio 3", "PROCEDENTE")])
+
+    t4 = doc.add_table(rows=2, cols=4)
+    _populate_test_table(t4, [("104/2026", "44444A", "Consórcio 4", "IMPROCEDENTE")])
+
+    stream = RecursosDocxInputStream(first_instance=True)
+    results = list(stream.read(_create_sample_doc_stream(doc)))
+
+    assert len(results) == 4
+    assert results[0]["NUM_ATA"] == "10"
+    assert results[0]["NUM_RECURSO"] == "101/2026"
+    assert results[1]["NUM_ATA"] == "10"
+    assert results[1]["NUM_RECURSO"] == "102/2026"
+    assert results[2]["NUM_ATA"] == "11"
+    assert results[2]["NUM_RECURSO"] == "103/2026"
+    assert results[3]["NUM_ATA"] == "11"
+    assert results[3]["NUM_RECURSO"] == "104/2026"
+
+
+def test_docx_stream_segunda_instancia_with_atas_raises_incorrect_instance():
+    doc = Document()
+    doc.add_paragraph(
+        "PUBLICADO NO DIARIO OFICIAL DO MUNICIPIO DE BELO HORIZONTE EM 01/01/2026"
+    )
+
+    doc.add_paragraph("ATA DA 4ª SESSÃO ORDINÁRIA")
+
+    t0 = doc.add_table(2, 4)
+    _populate_test_table(t0, [("101/2026", "11111A", "Consórcio 1", "IMPROCEDENTE")])
+
+    stream = RecursosDocxInputStream(first_instance=False)
+    with pytest.raises(IncorrectInstanceError):
+        list(stream.read(_create_sample_doc_stream(doc)))
+
+
+def test_docx_stream_table_before_initial_ata_raises_error():
+    doc = Document()
+    doc.add_paragraph(
+        "PUBLICADO NO DIARIO OFICIAL DO MUNICIPIO DE BELO HORIZONTE EM 15/05/2026"
+    )
+
+    # Table appears BEFORE any Ata header
+    t1 = doc.add_table(rows=2, cols=4)
+    _populate_test_table(t1, [("101/2026", "11111A", "Consórcio 1", "IMPROCEDENTE")])
+
+    doc.add_paragraph("ATA DA 5ª SESSÃO ORDINÁRIA")
+    t2 = doc.add_table(rows=2, cols=4)
+    _populate_test_table(t2, [("102/2026", "22222A", "Consórcio 2", "PROCEDENTE")])
+
+    stream = RecursosDocxInputStream(first_instance=True)
+    with pytest.raises(QuantityOfAtasMismatchError) as exc_info:
+        list(stream.read(_create_sample_doc_stream(doc)))
+    assert "Tabela encontrada antes de qualquer ata" in str(exc_info.value)
+
+
+def test_docx_stream_no_atas_raises_error():
+    doc = Document()
+    doc.add_paragraph(
+        "PUBLICADO NO DIARIO OFICIAL DO MUNICIPIO DE BELO HORIZONTE EM 15/05/2026"
+    )
+    t1 = doc.add_table(rows=2, cols=4)
+    _populate_test_table(t1, [("101/2026", "11111A", "Consórcio 1", "IMPROCEDENTE")])
+
+    stream = RecursosDocxInputStream(first_instance=True)
+    with pytest.raises(QuantityOfAtasMismatchError):
+        list(stream.read(_create_sample_doc_stream(doc)))
+
+
+def test_docx_stream_segunda_instancia_multiple_tables():
+    doc = Document()
+    doc.add_paragraph(
+        "PUBLICADO NO DIARIO OFICIAL DO MUNICIPIO DE BELO HORIZONTE EM 15/05/2026"
+    )
+    t1 = doc.add_table(rows=2, cols=4)
+    _populate_test_table(t1, [("201/2026", "11111A", "Consórcio 1", "IMPROCEDENTE")])
+    t2 = doc.add_table(rows=2, cols=4)
+    _populate_test_table(t2, [("202/2026", "22222A", "Consórcio 2", "PROCEDENTE")])
+
+    stream = RecursosDocxInputStream(first_instance=False)
+    results = list(stream.read(_create_sample_doc_stream(doc)))
+
+    assert len(results) == 2
+    assert "NUM_ATA" not in results[0]
+    assert "NUM_ATA" not in results[1]
+    assert results[0]["NUM_RECURSO"] == "201/2026"
+    assert results[1]["NUM_RECURSO"] == "202/2026"
+
+
+def test_docx_stream_dat_publ_invalid_format():
+    doc = Document()
+    doc.add_paragraph(
+        "PUBLICADO NO DIARIO OFICIAL DO MUNICIPIO DE BELO HORIZONTE EM 2026/13/01"
+    )
+
+    t1 = doc.add_table(rows=2, cols=4)
+    _populate_test_table(t1, [("201/2026", "11111A", "Consórcio 1", "IMPROCEDENTE")])
+    t2 = doc.add_table(rows=2, cols=4)
+    _populate_test_table(t2, [("202/2026", "22222A", "Consórcio 2", "PROCEDENTE")])
+
+    stream = RecursosDocxInputStream(first_instance=False)
+    with pytest.raises(PublicationDateNotFoundError):
+        list(stream.read(_create_sample_doc_stream(doc)))
+
+
+def test_docx_stream_dat_publ_invalid_format_II():
+    doc = Document()
+    doc.add_paragraph(
+        "PUBLICADO NO DIARIO OFICIAL DO MUNICIPIO DE BELO HORIZONTE EM 00/0000/0000"
+    )
+
+    stream = RecursosDocxInputStream()
+    with pytest.raises(PublicationDateNotFoundError):
+        list(stream.read(_create_sample_doc_stream(doc)))
