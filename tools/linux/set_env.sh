@@ -3,5 +3,5 @@
 source .venv/bin/activate
 
 set -a
-source .env
+source .env.local
 set +a
