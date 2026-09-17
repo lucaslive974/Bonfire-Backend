@@ -1,6 +1,7 @@
 from io import BytesIO
 from unittest.mock import MagicMock
 
+import numpy as np
 import pandas as pd
 import pytest
 from docx import Document
@@ -179,6 +180,125 @@ def test_infracoes_transform_missing_dat_limt_recu():
     with pytest.raises(InvalidDocumentDataError) as exc_info:
         stream.transform(df)
     assert "DAT_LIMT_RECU" in str(exc_info.value)
+
+
+def test_infracoes_transform_skips_blank_rows():
+    df = pd.DataFrame(
+        {
+            "NUM_AI": ["12345-A", "", None, "  ", "67890-B"],
+            "DAT_LIMT_RECU": ["15/09/2026", "", None, "  ", "16/09/2026"],
+            "NOM_CONC": ["Consórcio A", "", None, "  ", "Consórcio B"],
+        }
+    )
+    stream = InfracoesTransformStream(
+        datetime_format="%d/%m/%Y %H:%M", date_format="%d/%m/%Y"
+    )
+    records = stream.transform(df)
+    assert len(records) == 2
+    assert records[0]["NUM_AI"] == "12345-A"
+    assert records[1]["NUM_AI"] == "67890-B"
+
+
+def test_infracoes_transform_skips_duplicate_headers():
+    df = pd.DataFrame(
+        {
+            "NUM_AI": ["12345-A", "NUM_AI", " num_ai ", "67890-B"],
+            "DAT_LIMT_RECU": [
+                "15/09/2026",
+                "DAT_LIMT_RECU",
+                "DAT_LIMT_RECU",
+                "16/09/2026",
+            ],
+            "NOM_CONC": ["Consórcio A", "NOM_CONC", "NOM_CONC", "Consórcio B"],
+        }
+    )
+    stream = InfracoesTransformStream(
+        datetime_format="%d/%m/%Y %H:%M", date_format="%d/%m/%Y"
+    )
+    records = stream.transform(df)
+    assert len(records) == 2
+    assert records[0]["NUM_AI"] == "12345-A"
+    assert records[1]["NUM_AI"] == "67890-B"
+
+
+def test_infracoes_transform_all_rows_blank_returns_empty():
+    df = pd.DataFrame(
+        {
+            "NUM_AI": ["", None, "NUM_AI"],
+            "DAT_LIMT_RECU": ["", None, "DAT_LIMT_RECU"],
+        }
+    )
+    stream = InfracoesTransformStream(
+        datetime_format="%d/%m/%Y %H:%M", date_format="%d/%m/%Y"
+    )
+    records = stream.transform(df)
+    assert records == []
+
+
+def test_infracoes_transform_invalid_date_meaningful_error():
+    df = pd.DataFrame(
+        {
+            "NUM_AI": ["12345-A", "67890-B"],
+            "DAT_LIMT_RECU": [
+                "15/09/2026",
+                "2026-09-16",
+            ],  # Line 3 has ISO date instead of dd/mm/YYYY
+        }
+    )
+    stream = InfracoesTransformStream(
+        datetime_format="%d/%m/%Y %H:%M", date_format="%d/%m/%Y"
+    )
+    with pytest.raises(InvalidDocumentDataError) as exc_info:
+        stream.transform(df)
+
+    msg = str(exc_info.value)
+    assert "DAT_LIMT_RECU" in msg
+    assert "linha 3" in msg
+    assert "2026-09-16" in msg
+    assert "%d/%m/%Y" in msg
+
+
+def test_infracoes_transform_cod_linh_formatting():
+    df = pd.DataFrame(
+        {
+            "NUM_AI": ["12345-A", "67890-B", "99999-C"],
+            "COD_LINH": [61.0, "6101", np.nan],
+            "NOM_LINH": ["Linha 61", "Linha 6101", np.nan],
+            "DAT_LIMT_RECU": ["15/09/2026", "16/09/2026", "17/09/2026"],
+        }
+    )
+    stream = InfracoesTransformStream(
+        datetime_format="%d/%m/%Y %H:%M", date_format="%d/%m/%Y"
+    )
+    records = stream.transform(df)
+    assert len(records) == 3
+    assert records[0]["COD_LINH"] == "61"
+    assert records[0]["NOM_LINH"] == "Linha 61"
+    assert records[1]["COD_LINH"] == "6101"
+    assert records[2]["COD_LINH"] == ""
+    assert records[2]["NOM_LINH"] == ""
+
+
+def test_infracoes_transform_drops_empty_unnamed_columns():
+    df = pd.DataFrame(
+        {
+            "NUM_AI": ["12345-A", "67890-B"],
+            "DAT_LIMT_RECU": ["15/09/2026", "16/09/2026"],
+            "Unnamed: 2": [None, None],
+            "Unnamed: 3": ["", "  "],
+            "Unnamed: 4": [np.nan, "valid_extra"],
+        }
+    )
+    stream = InfracoesTransformStream(
+        datetime_format="%d/%m/%Y %H:%M", date_format="%d/%m/%Y"
+    )
+    records = stream.transform(df)
+    assert len(records) == 2
+    assert "Unnamed: 2" not in records[0]
+    assert "Unnamed: 3" not in records[0]
+    # Unnamed: 4 was not completely empty, so it was preserved
+    assert "Unnamed: 4" in records[0]
+    assert records[1]["Unnamed: 4"] == "valid_extra"
 
 
 # ==========================================
