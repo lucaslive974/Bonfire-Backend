@@ -273,7 +273,10 @@ class InfracoesCsvInputStream(InputStream[Any, pd.DataFrame]):
             best_sep = self._detect_separator(source)
             clean_source = SanitizedTextIO(source)
             for chunk in pd.read_csv(
-                cast(Any, clean_source), header=0, delimiter=best_sep, chunksize=1000
+                cast(Any, clean_source),
+                header=0,
+                delimiter=best_sep,
+                chunksize=1000,
             ):
                 yield chunk
         except Exception as e:
@@ -318,84 +321,174 @@ class InfracoesTransformStream(TransformStream[pd.DataFrame, list[dict[str, Any]
         self.convert_val_infr = convert_val_infr
         super().__init__()
 
+    def _parse_date_column(
+        self, data_frame: pd.DataFrame, col: str, expected_format: str
+    ) -> None:
+        if col not in data_frame.columns:
+            return
+
+        if pd.api.types.is_datetime64_any_dtype(data_frame[col]):
+            return
+
+        raw_series = data_frame[col]
+        is_non_empty = raw_series.notna() & (
+            ~raw_series.astype(str).str.strip().isin(["", "nan", "None", "NaT"])
+        )
+
+        parsed = pd.to_datetime(
+            raw_series,
+            format=expected_format,
+            errors="coerce",
+        )
+
+        invalid_mask = is_non_empty & parsed.isna()
+        if invalid_mask.any():
+            err_row_idx = data_frame[invalid_mask].index[0]
+            err_line = err_row_idx + 2
+            bad_val = data_frame.loc[err_row_idx, col]
+            raise InvalidDocumentDataError(
+                f"Erro no arquivo: Campo '{col}' na linha {err_line} possui valor inválido ('{bad_val}'). "
+                f"Formato esperado: {expected_format}."
+            )
+
+        data_frame[col] = parsed
+
+    def _concatenate_date_and_time(self, data_frame: pd.DataFrame) -> None:
+        if "DAT_OCOR_INFR" not in data_frame.columns:
+            return
+
+        if "HORA" in data_frame.columns:
+            has_date = data_frame["DAT_OCOR_INFR"].notna() & (
+                ~data_frame["DAT_OCOR_INFR"]
+                .astype(str)
+                .str.strip()
+                .isin(["", "nan", "None", "NaT"])
+            )
+            has_hora = data_frame["HORA"].notna() & (
+                ~data_frame["HORA"]
+                .astype(str)
+                .str.strip()
+                .isin(["", "nan", "None", "NaT"])
+            )
+            date_col = data_frame["DAT_OCOR_INFR"].astype(str).str.strip()
+            hora_col = data_frame["HORA"].astype(str).str.strip()
+            combined = date_col.str.cat(hora_col, sep=" ")
+            data_frame["DAT_OCOR_INFR"] = combined.where(has_date & has_hora, None)
+            data_frame.drop(columns=["HORA"], inplace=True)
+            self._parse_date_column(data_frame, "DAT_OCOR_INFR", self.datetime_format)
+        else:
+            self._parse_date_column(data_frame, "DAT_OCOR_INFR", self.date_format)
+
+    def _clean_empty_unnamed_columns(self, data_frame: pd.DataFrame) -> pd.DataFrame:
+        """Drop columns that have no name/header and contain only empty/null values."""
+        unnamed_empty_cols = [
+            col
+            for col in data_frame.columns
+            if (
+                str(col).strip().lower().startswith("unnamed:")
+                or str(col).strip() == ""
+            )
+            and (
+                data_frame[col].isna()
+                | data_frame[col]
+                .astype(str)
+                .str.strip()
+                .isin(["", "nan", "None", "NaT"])
+            ).all()
+        ]
+        if unnamed_empty_cols:
+            return data_frame.drop(columns=unnamed_empty_cols)
+        return data_frame
+
+    def _clean_blank_and_header_rows(self, data_frame: pd.DataFrame) -> pd.DataFrame:
+        """Drop completely blank rows and duplicated header rows."""
+        is_blank = data_frame.isna() | data_frame.astype(str).apply(
+            lambda col: col.str.strip().isin(["", "nan", "None"])
+        )
+        data_frame = data_frame[~is_blank.all(axis=1)]
+
+        if "NUM_AI" in data_frame.columns:
+            data_frame = data_frame[
+                data_frame["NUM_AI"].astype(str).str.strip().str.upper() != "NUM_AI"
+            ]
+        return data_frame
+
+    def _validate_required_fields(self, data_frame: pd.DataFrame) -> None:
+        """Validate that mandatory fields (NUM_AI, DAT_LIMT_RECU) are present and non-empty."""
+        if "NUM_AI" in data_frame.columns:
+            missing_ai = data_frame[
+                data_frame["NUM_AI"].isna()
+                | (data_frame["NUM_AI"].astype(str).str.strip() == "")
+            ]
+            if not missing_ai.empty:
+                err_idx = missing_ai.index[0] + 2
+                raise InvalidDocumentDataError(
+                    f"Erro no arquivo: Campo 'Número do AI' (NUM_AI) está vazio na linha {err_idx}."
+                )
+
+        if "DAT_LIMT_RECU" in data_frame.columns:
+            missing_dat = data_frame[
+                data_frame["DAT_LIMT_RECU"].isna()
+                | (data_frame["DAT_LIMT_RECU"].astype(str).str.strip() == "")
+            ]
+            if not missing_dat.empty:
+                err_idx = missing_dat.index[0] + 2
+                raise InvalidDocumentDataError(
+                    f"Erro no arquivo: Campo 'Data Limite do Recurso' (DAT_LIMT_RECU) está vazio na linha {err_idx}."
+                )
+
+    def _normalize_columns(self, data_frame: pd.DataFrame) -> None:
+        """Format and convert data types for specific columns (COD_LINH, NOM_LINH, VAL_INFR)."""
+        if "COD_LINH" in data_frame.columns:
+            data_frame["COD_LINH"] = (
+                data_frame["COD_LINH"]
+                .fillna("")
+                .apply(
+                    lambda x: (
+                        str(int(x))
+                        if isinstance(x, float) and x.is_integer()
+                        else (str(x).strip() if pd.notna(x) else "")
+                    )
+                )
+            )
+
+        if "NOM_LINH" in data_frame.columns:
+            data_frame["NOM_LINH"] = (
+                data_frame["NOM_LINH"].fillna("").astype(str).str.strip()
+            )
+
+        if self.convert_val_infr and "VAL_INFR" in data_frame.columns:
+            data_frame["VAL_INFR"] = data_frame["VAL_INFR"].map(_parse_val_infr)
+
+    def _parse_dates(self, data_frame: pd.DataFrame) -> None:
+        """Parse all date/time columns in the DataFrame."""
+        self._concatenate_date_and_time(data_frame=data_frame)
+        self._parse_date_column(data_frame, "DAT_EMIS_NOTF", self.date_format)
+        self._parse_date_column(data_frame, "DAT_LIMT_RECU", self.date_format)
+
+        if "DAT_CANC" in data_frame.columns and not bool(
+            data_frame["DAT_CANC"].isnull().all()
+        ):
+            self._parse_date_column(data_frame, "DAT_CANC", self.date_format)
+
+    def _to_records(self, data_frame: pd.DataFrame) -> list[dict[str, Any]]:
+        """Clean NaN values to None and convert DataFrame to list of dictionaries."""
+        cast(Any, data_frame).replace([np.nan], [None], inplace=True)
+        return cast(list[dict[str, Any]], data_frame.to_dict(orient="records"))
+
     def transform(self, data_frame: pd.DataFrame) -> list[dict[str, Any]]:
         try:
-            if "NUM_AI" in data_frame.columns:
-                missing_ai = data_frame[
-                    data_frame["NUM_AI"].isna() | (data_frame["NUM_AI"] == "")
-                ]
-                if not missing_ai.empty:
-                    err_idx = missing_ai.index[0] + 2
-                    raise InvalidDocumentDataError(
-                        f"Erro no arquivo: Campo 'Número do AI' (NUM_AI) está vazio na linha {err_idx}."
-                    )
+            data_frame = self._clean_empty_unnamed_columns(data_frame)
+            data_frame = self._clean_blank_and_header_rows(data_frame)
 
-            if "DAT_LIMT_RECU" in data_frame.columns:
-                missing_dat = data_frame[
-                    data_frame["DAT_LIMT_RECU"].isna()
-                    | (data_frame["DAT_LIMT_RECU"] == "")
-                ]
-                if not missing_dat.empty:
-                    err_idx = missing_dat.index[0] + 2
-                    raise InvalidDocumentDataError(
-                        f"Erro no arquivo: Campo 'Data Limite do Recurso' (DAT_LIMT_RECU) está vazio na linha {err_idx}."
-                    )
+            if data_frame.empty:
+                return []
 
-            if "HORA" in data_frame.columns:
-                data_frame["DAT_OCOR_INFR"] = (
-                    str(data_frame["DAT_OCOR_INFR"].astype(str))
-                    + str(" ")
-                    + str(data_frame["HORA"].astype(str))
-                )
+            self._validate_required_fields(data_frame)
+            self._normalize_columns(data_frame)
+            self._parse_dates(data_frame)
 
-            if "DAT_OCOR_INFR" in data_frame.columns:
-                data_frame["DAT_OCOR_INFR"] = pd.to_datetime(
-                    data_frame["DAT_OCOR_INFR"],
-                    format="mixed",
-                    dayfirst=True,
-                    errors="coerce",
-                )
-            if "DAT_EMIS_NOTF" in data_frame.columns:
-                data_frame["DAT_EMIS_NOTF"] = pd.to_datetime(
-                    data_frame["DAT_EMIS_NOTF"],
-                    format="mixed",
-                    dayfirst=True,
-                    errors="coerce",
-                )
-            if "DAT_LIMT_RECU" in data_frame.columns:
-                data_frame["DAT_LIMT_RECU"] = pd.to_datetime(
-                    data_frame["DAT_LIMT_RECU"],
-                    format="mixed",
-                    dayfirst=True,
-                    errors="coerce",
-                )
-
-            if "DAT_LIMT_RECU" in data_frame.columns:
-                nat_dat = data_frame[data_frame["DAT_LIMT_RECU"].isna()]
-                if not nat_dat.empty:
-                    err_idx = nat_dat.index[0] + 2
-                    raise InvalidDocumentDataError(
-                        f"Erro no arquivo: A 'Data Limite' na linha {err_idx} está em um formato inválido ou corrompido."
-                    )
-
-            if self.convert_val_infr and "VAL_INFR" in data_frame.columns:
-                data_frame["VAL_INFR"] = data_frame["VAL_INFR"].map(_parse_val_infr)
-
-            if "DAT_CANC" in data_frame.columns and not bool(
-                data_frame["DAT_CANC"].isnull().all()
-            ):
-                data_frame["DAT_CANC"] = pd.to_datetime(
-                    data_frame["DAT_CANC"],
-                    format="mixed",
-                    dayfirst=True,
-                    errors="coerce",
-                )
-
-            if "HORA" in data_frame.columns:
-                data_frame = data_frame.drop(columns=["HORA"])
-
-            cast(Any, data_frame).replace([np.nan], [None], inplace=True)
-            return cast(list[dict[str, Any]], data_frame.to_dict(orient="records"))
+            return self._to_records(data_frame)
         except InvalidDocumentDataError:
             raise
         except Exception as e:

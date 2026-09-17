@@ -52,8 +52,8 @@ class ParserFactory:
         return PyIngestionDocumentExtractor(
             input_stream_class=InfracoesXlsInputStream,
             transform_stream_class=lambda: InfracoesTransformStream(
-                datetime_format="%Y-%m-%d %H:%M:%S",
-                date_format="%Y-%m-%d",
+                datetime_format="%d/%m/%Y %H:%M",
+                date_format="%d/%m/%Y",
                 convert_val_infr=False,
             ),
             write_stream_factory=lambda: BonfireInfracaoWriteStream(
