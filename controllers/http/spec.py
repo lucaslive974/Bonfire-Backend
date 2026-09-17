@@ -2,16 +2,14 @@ from flask import Request, jsonify
 from flask import Response as FlaskResponse
 from pydantic import ValidationError
 from spectree import SecurityScheme, SpecTree
-from spectree.models import SecuritySchemeData
+from spectree.models import SecureType, SecuritySchemeData
 
 bearer_scheme = SecurityScheme(
     name="BearerAuth",
-    data=SecuritySchemeData.model_validate(
-        {
-            "type": "http",
-            "scheme": "bearer",
-            "bearerFormat": "JWT",
-        }
+    data=SecuritySchemeData(
+        type=SecureType.HTTP,
+        scheme="bearer",
+        bearer_format="JWT",
     ),
 )
 
@@ -19,12 +17,17 @@ bearer_scheme = SecurityScheme(
 def spectree_before_handler(
     req: Request,
     resp: FlaskResponse,
-    err: ValidationError | None,
-    instance,
+    err: Exception | None,
+    instance: object,
+    model_adapter: object = None,
 ) -> None:
     """Formats validation errors consistently with the API ErrorResponseDTO."""
     if err:
-        errors = err.errors(include_context=False)
+        errors = (
+            err.errors(include_context=False)
+            if isinstance(err, ValidationError)
+            else []
+        )
         if errors:
             first = errors[0]
             err_type = first.get("type", "")
