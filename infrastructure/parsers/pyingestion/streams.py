@@ -7,7 +7,10 @@ import numpy as np
 import pandas as pd
 from docx import Document
 from docx.document import Document as DocxDocument
+from docx.oxml.table import CT_Tbl
+from docx.oxml.text.paragraph import CT_P
 from docx.table import Table
+from docx.text.paragraph import Paragraph
 from pyingestion import ExtractionSession, InputStream, OutputStream, TransformStream
 
 from domain.entities import AutoInfracao
@@ -87,6 +90,8 @@ class RecursosDocxInputStream(InputStream[Any, dict[str, Any]]):
     Extracts appeals from DOCX files and yields items one by one in stream fashion.
     """
 
+    PATTERN_NUM_ATA = r"ATA\s+DA\s+(\d+)"
+
     def __init__(self, first_instance: bool = True):
         self.first_instance = first_instance
         self.current_unit_index = 0
@@ -113,28 +118,6 @@ class RecursosDocxInputStream(InputStream[Any, dict[str, Any]]):
                 "Data de publicação não encontrada no documento"
             )
         return dat_publ
-
-    def extract_atas(self, doc: DocxDocument) -> list[str]:
-        num_atas: list[str] = []
-        padrao_num_ata = r"ATA\s+DA\s+(\d+)ª"
-        for paragraph in doc.paragraphs:
-            match_num_ata = re.search(padrao_num_ata, paragraph.text)
-            if match_num_ata:
-                num_atas.append(match_num_ata.group(1))
-
-        qtd_atas = len(num_atas)
-        qtd_tables = len(doc.tables)
-        if not self.first_instance and len(num_atas) > 0:
-            raise IncorrectInstanceError(
-                "Instância incorreta. Importe como recurso de primeira instância"
-            )
-        if self.first_instance and (qtd_atas != qtd_tables):
-            raise QuantityOfAtasMismatchError(
-                qtd_atas,
-                qtd_tables,
-                "Quantidade de atas encontradas difere da quantidade de tabelas",
-            )
-        return num_atas
 
     def process_table(self, table: Table, dat_publ: str, num_ata: int | str | None):
         for row_idx, row in enumerate(table.rows):
@@ -178,18 +161,46 @@ class RecursosDocxInputStream(InputStream[Any, dict[str, Any]]):
                 recurso["NUM_ATA"] = num_ata
             yield recurso
 
+    def _iter_block_items(
+        self, doc: DocxDocument
+    ) -> Generator[Paragraph | Table, None, None]:
+        """Iterates through document body elements in document order."""
+        for child in doc._element.body:
+            if isinstance(child, CT_P):
+                yield Paragraph(child, doc)
+            elif isinstance(child, CT_Tbl):
+                yield Table(child, doc)
+
+    def validate_num_ata(self, num_ata: str | None) -> None:
+        if self.first_instance:
+            if num_ata is None:
+                raise QuantityOfAtasMismatchError(
+                    0,
+                    0,
+                    "Tabela encontrada antes de qualquer ata no documento",
+                )
+        elif num_ata is not None:
+            raise IncorrectInstanceError(
+                "Instância incorreta. Importe como recurso de primeira instância"
+            )
+
     def read(
         self, source: Any, session: ExtractionSession | None = None
     ) -> Generator[dict[str, Any], None, None]:
         doc = Document(source)
         dat_publ = self.extract_data_publ(doc)
-        num_atas = self.extract_atas(doc)
 
-        for index, table in enumerate(doc.tables):
-            num_ata = num_atas[index] if self.first_instance else None
-            if session:
-                session.process_page_result(True, 1, 1)
-            yield from self.process_table(table, dat_publ, num_ata)
+        current_ata: str | None = None
+        for block in self._iter_block_items(doc):
+            if isinstance(block, Paragraph):
+                match_num_ata = re.search(self.PATTERN_NUM_ATA, block.text)
+                if match_num_ata:
+                    current_ata = match_num_ata.group(1)
+            elif isinstance(block, Table):
+                self.validate_num_ata(current_ata)
+                if session:
+                    session.process_page_result(True, 1, 1)
+                yield from self.process_table(block, dat_publ, current_ata)
 
 
 class SanitizedTextIO(io.TextIOBase):
@@ -332,9 +343,9 @@ class InfracoesTransformStream(TransformStream[pd.DataFrame, list[dict[str, Any]
 
             if "HORA" in data_frame.columns:
                 data_frame["DAT_OCOR_INFR"] = (
-                    data_frame["DAT_OCOR_INFR"].astype(str)
-                    + " "
-                    + data_frame["HORA"].astype(str)
+                    str(data_frame["DAT_OCOR_INFR"].astype(str))
+                    + str(" ")
+                    + str(data_frame["HORA"].astype(str))
                 )
 
             if "DAT_OCOR_INFR" in data_frame.columns:
